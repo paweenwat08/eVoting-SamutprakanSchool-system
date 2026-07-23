@@ -1,0 +1,92 @@
+header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+
+    /* 1. ไล่ระดับจากขาวใส 80% ไปจนถึงใสสนิท 0% */
+    background: linear-gradient(to bottom,
+            rgba(245, 247, 251, 0.2) 0%,
+            rgba(245, 247, 251, 0.1) 50%,
+            rgba(245, 247, 251, 0) 100%);
+
+    /* 2. การเบลอก็สามารถทำแบบไล่ระดับได้ด้วย Mask (เทคนิคขั้นสูง) */
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+
+    /* เว้นระยะห่างด้านบนนิดหน่อยแทน margin เพื่อไม่ให้เห็นช่องว่างตอนเลื่อน */
+    padding: 20px 70px;
+}
+
+
+#nav-title {
+    display: flex;
+    justify-self: start;
+    left: 70px;
+    gap: 20px;
+}
+#nav-title p {
+    font-size: 22px;
+    font-weight: 700;
+    /* ตัวหนา */
+    font-family: 'Courier New', Courier, monospace;
+}
+#nav-title p:nth-child(1) {
+    color: #1e3a8a;
+}
+#nav-title p:nth-child(2) {
+    color: #c9c932;
+}
+
+#vote-btn-wrapper {
+    justify-self: center;
+}
+#login-btn {
+    background-color: #4477F9;
+
+    font-size: 25px;
+    font-weight: 700;
+    color: #f1f1f1;
+    border-radius: 10px;
+}
+#login-btn:hover {
+    background: #225df2;
+}
+
+#login-btn:active {
+    transform: scale(0.8);
+}
+
+
+#nav-btn-container {
+    display: flex;
+    justify-self: end;
+    background-color: #f7f7f7;
+    border-radius: 10px;
+}
+
+.nav-btn {
+    font-size: large;
+    padding: 8px 15px;
+    background-color: #f7f7f7;
+    border: 0 solid black;
+    transition: 0.4s ease;
+}
+.nav-btn:hover {
+    background: #dfdfdf;
+}
+.first-nav-btn {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+}
+.last-nav-btn {
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
