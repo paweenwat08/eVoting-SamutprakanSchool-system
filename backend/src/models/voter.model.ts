@@ -12,6 +12,7 @@ export interface IVoter extends Document, IVoterMethods {
   firstname: string;
   lastname: string;
   password: string;
+  district: number;
   hasVoted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +41,11 @@ const voterSchema = new Schema<IVoter, Model<IVoter>, IVoterMethods>(
       type: String,
       required: true,
     },
+    district: {
+      type: Number,
+      required: true,
+      min: 1
+    },
     hasVoted: {
       type: Boolean,
       default: false,
@@ -53,7 +59,7 @@ const voterSchema = new Schema<IVoter, Model<IVoter>, IVoterMethods>(
 // Before saving any password, hash it
 voterSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-  
+
   // Note: Cost factor of 10-12 is strongly recommended for secure production hashing
   this.password = await bcrypt.hash(this.password, 10);
 });
@@ -72,7 +78,7 @@ voterSchema.methods.comparePassword = async function (
 
   const isMatch = await bcrypt.compare(String(password), this.password);
   console.log("Is Password Match?:", isMatch);
-  
+
   return isMatch;
 };
 

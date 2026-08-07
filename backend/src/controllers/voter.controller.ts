@@ -3,11 +3,11 @@ import { Request, Response } from "express";
 
 const registerVoter = async (req: Request, res: Response) => {
     try {
-        const { studentId, firstname, lastname, password } = req.body;
+        const { studentId, firstname, lastname, password, district } = req.body;
 
         //basic validation
 
-        if (!studentId || !firstname || !lastname || !password) {
+        if (!studentId || !firstname || !lastname || !password || !district) {
             return res.status(400).json({ message: "All fields are important!" })
         }
 
@@ -22,7 +22,8 @@ const registerVoter = async (req: Request, res: Response) => {
             studentId,
             firstname,
             lastname,
-            password
+            password,
+            district
         })
 
         res.status(201).json({
@@ -39,14 +40,14 @@ const registerVoter = async (req: Request, res: Response) => {
         }
 
         return res.status(500).json({
-            message: "Internal Server Error",
+            message: "Internal Server Error", error
         });
     }
 }
 
 const loginVoter = async (req: Request, res: Response) => {
     try {
-        
+
         //checking if voter alreasdy exists
         const { studentId, password } = req.body;
 
@@ -54,17 +55,28 @@ const loginVoter = async (req: Request, res: Response) => {
             studentId: studentId.trim()
         });
 
-        if (!voter) return res.status(400).json({ 
+        if (!voter) return res.status(400).json({
+            success: false,
             message: "Voter not found"
         });
 
         //compare passwords
         const isMatch = await voter.comparePassword(password);
         if (!isMatch) return res.status(400).json({
+            success: false,
             message: "invalid credentials"
         })
 
+        //checking if voter already voted
+        if (voter.hasVoted) {
+            return res.status(403).json({
+                success: false,
+                message: "คุณใช้สิทธิ์เลือกตั้งแล้ว"
+            });
+        }
+
         res.status(200).json({
+            success: true,
             message: "Voter Logged In",
             voter: {
                 id: voter.id,
