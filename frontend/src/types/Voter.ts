@@ -1,6 +1,8 @@
-export type Voter = {
-  id: number
-  fname: string
-  lname: string
-  district: number
+export interface Voter {
+  _id: string;
+  studentId: string;
+  firstname: string;
+  lastname: string;
+  district: number;
+  hasVoted: boolean;
 }

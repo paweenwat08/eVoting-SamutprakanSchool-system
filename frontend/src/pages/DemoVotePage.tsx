@@ -1,42 +1,73 @@
-import { getCandidates, getCandidatesByDistrict } from "../services/candidate.ts"
-import { getParties } from "../services/party.ts"
-import { useState } from "react"
-import '../styles/VotePage.css'
+import { useState, useEffect } from "react";
+import { getCandidates } from "../services/candidate";
+import { getParties } from "../services/party";
+import type { Party } from "../types/Party";
+import type { Candidate } from "../types/Candidate";
+import '../styles/VotePage.css';
 
 type Props = {
-  goResults: () => void
-}
-
+  goResults: () => void;
+};
 
 export default function DemoVotePage({ goResults }: Props) {
-  const [selectedParty, setSelectedParty] = useState<number | null>(null)
-  const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null)
-  const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [complete, setComplete] = useState(false)
+  // 1. เปลี่ยน Type ของ State ID เป็น string | null
+  const [selectedParty, setSelectedParty] = useState<string | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [complete, setComplete] = useState(false);
 
-  const candidates = getCandidates()
-  const parties = getParties()
-  const filteredCandidates = getCandidatesByDistrict(1)
+  const [parties, setParties] = useState<Party[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleConfirm = () => {
-    setShowConfirm(false)
-    setComplete(true)
+  // 2. ดึงข้อมูลจาก API ผ่าน useEffect
+  useEffect(() => {
+    async function loadDemoData() {
+      try {
+        const partyRes = await getParties();
+        const candidateRes = await getCandidates();
+
+        const partyList = Array.isArray(partyRes) ? partyRes : partyRes?.parties ?? [];
+        const candidateList = Array.isArray(candidateRes) ? candidateRes : candidateRes?.candidates ?? [];
+
+        setParties(partyList);
+        setCandidates(candidateList);
+      } catch (error) {
+        console.error("Failed to load demo vote data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDemoData();
+  }, []);
+
+  if (loading) {
+    return <p className="loading-text">กำลังโหลดระบบทดลองเลือกตั้ง...</p>;
   }
 
+  // 3. กรองผู้สมัครเขต 1 (หรือเปลี่ยนเลขเขตตามความเหมาะสม)
+  const filteredCandidates = candidates.filter((c) => c.district === 1);
+
+  const handleConfirm = () => {
+    setShowConfirm(false);
+    setComplete(true);
+  };
+
   return (
-    <div className="vote-container test-mode"> {/* เพิ่ม test-mode เผื่ออยากเปลี่ยนสีธีม */}
+    <div className="vote-container test-mode">
       <h2 className="test-title">โหมดทดลองระบบเลือกตั้ง</h2>
 
       {/* 🏛️ พรรค */}
       <section className="vote-section">
         <h3>เลือกพรรค</h3>
-        <div className="selection-grid"> {/* ใช้ Grid เดิม */}
+        <div className="selection-grid">
           {parties.map((p) => (
             <button
-              key={p.id}
-              className={`vote-btn ${selectedParty === p.id ? "active" : ""}`}
-              onClick={() => setSelectedParty(p.id)}
+              key={p._id}
+              className={`vote-btn ${selectedParty === p._id ? "active" : ""}`}
+              onClick={() => setSelectedParty(p._id)}
             >
               {p.name}
             </button>
@@ -52,11 +83,11 @@ export default function DemoVotePage({ goResults }: Props) {
         <div className="selection-grid">
           {filteredCandidates.map((c) => (
             <button
-              key={c.id}
-              className={`vote-btn ${selectedCandidate === c.id ? "active" : ""}`}
-              onClick={() => setSelectedCandidate(c.id)}
+              key={c._id}
+              className={`vote-btn ${selectedCandidate === c._id ? "active" : ""}`}
+              onClick={() => setSelectedCandidate(c._id)}
             >
-              {c.fname} {c.lname}
+              {c.firstname} {c.lastname}
             </button>
           ))}
         </div>
@@ -98,14 +129,12 @@ export default function DemoVotePage({ goResults }: Props) {
         ยืนยันการเลือก
       </button>
 
-      {/* Popup ยืนยัน และ Popup เสร็จสิ้น ใช้ Class modal เดิมได้เลย */}
+      {/* Popup ยืนยัน และ Popup เสร็จสิ้น */}
       {(showConfirm || complete) && (
-        <div className="modal-overlay"> {/* เพิ่ม backdrop-filter: blur ใน CSS จะดูดีมาก */}
-          <div className={`modal-card test-modal ${complete ? 'complete-modal' : ''}`}>
-
+        <div className="modal-overlay">
+          <div className={`modal-card test-modal ${complete ? "complete-modal" : ""}`}>
             {showConfirm ? (
               <>
-                {/* ส่วนหัว Popup สำหรับโหมดทดลอง */}
                 <div className="modal-header test-header">
                   <h3>ยืนยันการเลือกของคุณ</h3>
                 </div>
@@ -114,32 +143,31 @@ export default function DemoVotePage({ goResults }: Props) {
                   <p>ตรวจสอบความถูกต้องของการทดลองเลือกตั้ง</p>
 
                   <div className="confirm-summary test-summary">
-                    {/* จับกลุ่มเพื่อความสวยงาม */}
                     <div className="summary-item">
                       <span className="summary-label">พรรค</span>
                       <span className="summary-value">
-                        {parties.find(p => p.id === selectedParty)?.name}
+                        {parties.find((p) => p._id === selectedParty)?.name}
                       </span>
                     </div>
 
                     <div className="summary-item">
                       <span className="summary-label">ผู้สมัคร</span>
                       <span className="summary-value">
-                        {candidates.find(c => c.id === selectedCandidate)?.fname}{" "}
-                        {candidates.find(c => c.id === selectedCandidate)?.lname}
+                        {(() => {
+                          const candidate = candidates.find((c) => c._id === selectedCandidate);
+                          return candidate ? `${candidate.firstname} ${candidate.lastname}` : "";
+                        })()}
                       </span>
                     </div>
 
                     <div className="summary-item">
                       <span className="summary-label">ประชามติ</span>
                       <span className="summary-value">
-                        {
-                          selectedQuestion === 1
-                            ? "เห็นด้วย"
-                            : selectedQuestion === 2
-                              ? "ไม่เห็นด้วย"
-                              : "งดออกเสียง"
-                        }
+                        {selectedQuestion === 1
+                          ? "เห็นด้วย"
+                          : selectedQuestion === 2
+                          ? "ไม่เห็นด้วย"
+                          : "งดออกเสียง"}
                       </span>
                     </div>
                   </div>
@@ -161,7 +189,6 @@ export default function DemoVotePage({ goResults }: Props) {
                 </div>
               </>
             ) : (
-              /* Popup เมื่อทดลองเสร็จสิ้น */
               <div className="modal-body complete-body">
                 <h3>ท่านได้ทดลองใช้ระบบเสร็จสิ้น</h3>
                 <p>ขอบคุณที่ร่วมทดลองระบบเลือกตั้งจำลอง</p>
@@ -170,10 +197,9 @@ export default function DemoVotePage({ goResults }: Props) {
                 </button>
               </div>
             )}
-
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

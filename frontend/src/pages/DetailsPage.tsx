@@ -1,45 +1,75 @@
-import { getParties, getPartyById } from "../services/party.ts";
-import { getCandidates, getCandidateById, getCandidatesByParty, getCandidatesByDistrict } from "../services/candidate.ts";
-import { useState } from "react"
-import '../styles/DetailPage/DetailPage.css'
-import '../styles/DetailPage/DetailBox.css'
+import { useState, useEffect } from "react";
+import { getParties } from "../services/party";
+import { getCandidates } from "../services/candidate";
+import type { Party } from "../types/Party";
+import type { Candidate } from "../types/Candidate";
+import '../styles/DetailPage/DetailPage.css';
+import '../styles/DetailPage/DetailBox.css';
 
 export default function DetailsPage() {
-  const [selectedParty, setSelectedParty] = useState<number | null>(null)
-  const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null)
-  const [selectedDistrictDetail, setSelectedDistrictDetail] = useState<number | "all">("all")
+  const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [selectedDistrictDetail, setSelectedDistrictDetail] = useState<number | "all">("all");
 
-  const parties = getParties()
-  const candidates = getCandidates()
+  const [parties, setParties] = useState<Party[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const filteredCandidatesListDetail =
+  useEffect(() => {
+    async function loadAllData() {
+      try {
+        const partyRes = await getParties();
+        const candidateRes = await getCandidates();
+
+        const partyList = Array.isArray(partyRes) ? partyRes : partyRes?.parties ?? [];
+        const candidateList = Array.isArray(candidateRes) ? candidateRes : candidateRes?.candidates ?? [];
+
+        setParties(partyList);
+        setCandidates(candidateList);
+      } catch (error) {
+        console.error("Failed to load details page data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAllData();
+  }, []);
+
+  if (loading) {
+    return <p className="loading-text">กำลังโหลดข้อมูล...</p>;
+  }
+
+  const districts = Array.from(new Set(candidates.map((c) => c.district))).sort((a, b) => a - b);
+
+  const filteredCandidates =
     selectedDistrictDetail === "all"
       ? candidates
-      : getCandidatesByDistrict(selectedDistrictDetail)
+      : candidates.filter((c) => c.district === selectedDistrictDetail);
 
-  const districts = [...new Set(candidates.map(c => c.district))]
+  const selectedParty = parties.find((p) => p._id === selectedPartyId);
+  const selectedCandidate = candidates.find((c) => c._id === selectedCandidateId);
 
   return (
     <>
-      {!selectedParty && !selectedCandidate &&
+      {/* 📌 หน้าหลัก: แสดงรายการพรรค และผู้สมัคร */}
+      {!selectedPartyId && !selectedCandidateId && (
         <div className="info-container">
           <h2 className="section-title">รายชื่อพรรค</h2>
           <div className="party-grid">
             {parties.map((party) => (
-              <div key={party.id} className="party-info-card"
+              <div
+                key={party._id}
+                className="party-info-card"
                 onClick={() => {
-                  setSelectedParty(party.id)
-                  setSelectedCandidate(null)
-                }}>
-                <div className="party-number">{party.id}</div>
+                  setSelectedPartyId(party._id);
+                  setSelectedCandidateId(null);
+                }}
+              >
+                <div className="party-number">{party.number}</div>
                 <div className="party-detail">
                   <h3>{party.name}</h3>
-                  {/* เพิ่มข้อมูลนโยบายตรงนี้ */}
-                  <ul className="policy-list">
-                    {party.policies?.map((policy, index) => (
-                      <li key={index}>{policy}</li>
-                    ))}
-                  </ul>
+                  {/* ❌ ตัดส่วน policy-list ออกไปแล้ว */}
                 </div>
               </div>
             ))}
@@ -47,10 +77,17 @@ export default function DetailsPage() {
 
           <hr className="divider" />
 
+          {/* Selector เลือกเขต */}
           <div className="detail-district-selector-container">
             <h2 className="section-title">รายชื่อผู้สมัคร</h2>
             <div className="detail-district-selector">
-              {districts && districts.map((d) => (
+              <button
+                className={selectedDistrictDetail === "all" ? "active" : ""}
+                onClick={() => setSelectedDistrictDetail("all")}
+              >
+                ทั้งหมด
+              </button>
+              {districts.map((d) => (
                 <button
                   key={d}
                   className={String(selectedDistrictDetail) === String(d) ? "active" : ""}
@@ -59,129 +96,134 @@ export default function DetailsPage() {
                   เขต {d}
                 </button>
               ))}
-              <button
-                className={selectedDistrictDetail === "all" ? "active" : ""}
-                onClick={() => setSelectedDistrictDetail("all")}
-              >
-                ทั้งหมด
-              </button>
             </div>
           </div>
 
-
+          {/* รายการ Card ผู้สมัคร */}
           <div className="candidate-grid">
-            {filteredCandidatesListDetail.map((candidate) => {
-              const party = getPartyById(candidate.partyId)
+            {filteredCandidates.map((candidate) => {
+              const partyName =
+                typeof candidate.party === "object"
+                  ? candidate.party?.name
+                  : parties.find((p) => p._id === candidate.party)?.name || "ผู้สมัครอิสระ";
+
               return (
-                <div key={candidate.id} className="candidate-info-card"
+                <div
+                  key={candidate._id}
+                  className="candidate-info-card"
                   onClick={() => {
-                    setSelectedCandidate(candidate.id)
-                    setSelectedParty(null)
-                  }}>
+                    setSelectedCandidateId(candidate._id);
+                    setSelectedPartyId(null);
+                  }}
+                >
                   <div className="candidate-avatar">👤</div>
                   <div className="candidate-text">
-                    <h4>{candidate.fname} {candidate.lname}</h4>
-                    <p className="party-tag">สังกัด: {party?.name}</p>
-                    <p className="slogan"></p> {/* อาจจะเพิ่ม slogan */}
+                    <h4>
+                      {candidate.firstname} {candidate.lastname}
+                    </h4>
+                    <p className="party-tag">สังกัด: {partyName}</p>
+                    <p className="district-tag">เขตเลือกตั้งที่ {candidate.district}</p>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      }
+      )}
 
+      {/* 🏛️ รายละเอียดพรรคที่เลือก */}
       {selectedParty && (
         <div className="detail-box">
           <button
             className="back-btn"
             onClick={() => {
-              setSelectedParty(null)
-              setSelectedCandidate(null)
+              setSelectedPartyId(null);
+              setSelectedCandidateId(null);
             }}
           >
             ← กลับ
           </button>
-          {(() => {
-            const party = getPartyById(selectedParty)
-            if (!party) return null
 
-            const candidates = getCandidatesByParty(party.id)
+          <h3>🏛️ {selectedParty.name} (หมายเลข {selectedParty.number})</h3>
+
+          {/* ❌ ตัดส่วน "นโยบายหลัก" ออกไปแล้ว */}
+
+          <h4 style={{ marginTop: "20px" }}>👤 ผู้สมัครในพรรคนี้</h4>
+          {(() => {
+            const partyCandidates = candidates.filter((c) => {
+              if (typeof c.party === "object") return c.party?._id === selectedParty._id;
+              return c.party === selectedParty._id;
+            });
+
+            if (partyCandidates.length === 0) return <p>ไม่มีข้อมูลผู้สมัครในพรรคนี้</p>;
 
             return (
-              <>
-                <h3>🏛️ {party.name}</h3>
-
-                <h4>นโยบายหลัก</h4>
-                <ul>
-                  {party.policies.map((p, i) => (
-                    <li key={i}>{p}</li>
-                  ))}
-                </ul>
-
-                {/* 👇 เพิ่มตรงนี้ */}
-                <h4 style={{ marginTop: "20px" }}>👤 ผู้สมัครในพรรคนี้</h4>
-
-                {candidates.length === 0 ? (
-                  <p>ไม่มีผู้สมัคร</p>
-                ) : (
-                  <div className="candidate-list">
-                    {candidates.map(c => (
-                      <div key={c.id} className="mini-candidate-card"
-                        onClick={() => {
-                          setSelectedCandidate(c.id)
-                          setSelectedParty(null)
-                        }}>
-                        <span>👤 {c.fname} {c.lname}</span>
-                        <span className="district">เขต {c.district}</span>
-                      </div>
-                    ))}
+              <div className="candidate-list">
+                {partyCandidates.map((c) => (
+                  <div
+                    key={c._id}
+                    className="mini-candidate-card"
+                    onClick={() => {
+                      setSelectedCandidateId(c._id);
+                      setSelectedPartyId(null);
+                    }}
+                  >
+                    <span>
+                      👤 {c.firstname} {c.lastname}
+                    </span>
+                    <span className="district">เขต {c.district}</span>
                   </div>
-                )}
-              </>
-            )
+                ))}
+              </div>
+            );
           })()}
         </div>
       )}
+
+      {/* 👤 รายละเอียดผู้สมัครที่เลือก */}
       {selectedCandidate && (
         <div className="detail-box">
           <button
             className="back-btn"
             onClick={() => {
-              setSelectedParty(null)
-              setSelectedCandidate(null)
+              setSelectedPartyId(null);
+              setSelectedCandidateId(null);
             }}
           >
             ← กลับ
           </button>
-          {(() => {
-            const c = getCandidateById(selectedCandidate)
-            if (!c) return null
 
-            const party = getPartyById(c.partyId)
+          <h3>
+            👤 {selectedCandidate.firstname} {selectedCandidate.lastname}
+          </h3>
+          <p>
+            <strong>พรรค:</strong>{" "}
+            {(() => {
+              const partyObj =
+                typeof selectedCandidate.party === "object"
+                  ? selectedCandidate.party
+                  : parties.find((p) => p._id === selectedCandidate.party);
 
-            return (
-              <>
-                <h3>👤 {c.fname} {c.lname}</h3>
-                <p>
-                  <strong>พรรค:</strong>{" "}
-                  <span
-                    className="link-text"
-                    onClick={() => {
-                      setSelectedParty(party?.id || null)
-                      setSelectedCandidate(null)
-                    }}
-                  >
-                    {party?.name}
-                  </span>
-                </p>
-                <p><strong>เขต:</strong> {c.district}</p>
-              </>
-            )
-          })()}
+              if (!partyObj) return <span>ผู้สมัครอิสระ</span>;
+
+              return (
+                <span
+                  className="link-text"
+                  onClick={() => {
+                    setSelectedPartyId(partyObj._id);
+                    setSelectedCandidateId(null);
+                  }}
+                >
+                  {partyObj.name}
+                </span>
+              );
+            })()}
+          </p>
+          <p>
+            <strong>เขตเลือกตั้ง:</strong> {selectedCandidate.district}
+          </p>
         </div>
       )}
     </>
-  )
+  );
 }
-

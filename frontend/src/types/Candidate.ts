@@ -1,7 +1,9 @@
-export type Candidate = {
-  id: number
-  fname: string
-  lname: string
-  partyId: number
-  district: number
+import type { Party } from "./Party";
+
+export interface Candidate {
+  _id: string;
+  firstname: string;
+  lastname: string;
+  district: number;
+  party: string | Party; // รองรับทั้ง string ID และ Object Party ที่ถูก Populate มา
 }

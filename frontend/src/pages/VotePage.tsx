@@ -1,60 +1,104 @@
-import { getCandidates } from "../services/candidate.ts"
-import { getCandidatesByDistrict } from "../services/candidate.ts"
-import { getParties } from "../services/party.ts"
-import { useState } from "react"
-import { Vote, getVoterById } from "../services/voteServices.ts"
-import '../styles/VotePage.css'
+import { getParties } from "../services/party";
+import { getCandidates } from "../services/candidate";
+import { sendVote } from "../services/voteServices";
+import { useState, useEffect } from "react";
+import '../styles/VotePage.css';
 
-type Props = {
-  userId: number | null
-  goResults: () => void
+// 1. เพิ่ม Type Definitions สำหรับข้อมูล API
+interface Party {
+  id: string;
+  name: string;
 }
 
-export default function VotePage({ userId, goResults }: Props) {
-  const [selectedParty, setSelectedParty] = useState<number | null>(null)
-  const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null)
-  const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null)
-  const [showConfirm, setShowConfirm] = useState(false)
+interface Candidate {
+  id: string;
+  fname: string;
+  lname: string;
+  district: number | string;
+}
 
-  const candidates = getCandidates()
-  const parties= getParties()
-  const voter = getVoterById(userId)
+type Props = {
+  userId: number | null;
+  goResults: () => void;
+};
+
+export default function VotePage({ userId, goResults }: Props) {
+  const [selectedParty, setSelectedParty] = useState<string | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // เพิ่ม State สำหรับจัดการสถานะ Loading ระหว่างยิง API
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 2. ระบุ Type ให้กับ State
+  const [parties, setParties] = useState<Party[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const partyData = await getParties();
+        const candidateData = await getCandidates();
+
+        setParties(partyData.parties ?? []);
+        setCandidates(candidateData.candidates ?? []);
+      } catch (error) {
+        console.error("Failed to load vote data:", error);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  // ดึงข้อมูล Voter จาก LocalStorage
+  const voterRaw = localStorage.getItem("voter");
+  const voter = voterRaw ? JSON.parse(voterRaw) : null;
+
+  // 3. ปรับ Early Return ให้คืนค่า null แทน undefined
   if (!voter) {
-    return;
+    return <p>ไม่พบข้อมูลผู้ลงคะแนน กรุณาเข้าสู่ระบบใหม่</p>;
   }
+
+  if (!userId) {
+    return <p>กรุณา login ก่อน</p>;
+  }
+
   const voterDistrict = voter.district;
 
-  // กรองผู้สมัครที่สมัครในเขตที่ผู้ใช้อยู่
-  const filteredCandidates = getCandidatesByDistrict(voterDistrict)
+  const filteredCandidates = candidates.filter(
+    (c) => c.district === voterDistrict
+  );
 
-  // เช็คว่า login อยู่มั้ย
-  if (!userId) {
-    return <p>กรุณา login ก่อน</p>
-  }
+  // 4. ปรับเป็น async/await และเปลี่ยน Vote เป็น sendVote
+  const handleConfirm = async () => {
+    // ตรวจสอบความถูกต้องของข้อมูล
+    if (!userId || !selectedParty || !selectedCandidate || !selectedQuestion) return;
 
-  const handleConfirm = () => {
-    if (!selectedParty || !selectedCandidate || !selectedQuestion) return
+    setIsSubmitting(true);
 
-    Vote({
-      voterId: userId!,
-      targetId: selectedParty,
-      voteType: "party"
-    })
+    try {
+      // แปลงตัวเลือกประชามติ (1, 2, 3) ให้เป็นข้อความ string ตามที่ API คาดหวัง
+      const referendumText =
+        selectedQuestion === 1 ? "เห็นด้วย" :
+          selectedQuestion === 2 ? "ไม่เห็นด้วย" : "งดออกเสียง";
 
-    Vote({
-      voterId: userId!,
-      targetId: selectedCandidate,
-      voteType: "candidate"
-    })
+      // เรียก sendVote ครั้งเดียว พร้อมส่ง พารามิเตอร์ 4 ตัวเรียงตามลำดับ
+      await sendVote(
+        String(userId),            // voter
+        selectedParty,             // party
+        selectedCandidate,         // candidate
+        referendumText             // referendum (หรือเปลี่ยนเป็น String(selectedQuestion) ถ้า API รับเป็น "1","2","3")
+      );
 
-    Vote({
-      voterId: userId!,
-      targetId: selectedQuestion,
-      voteType: "question"
-    })
-
-    goResults()
-  }
+      goResults();
+    } catch (error) {
+      console.error("Failed to submit vote:", error);
+      alert("เกิดข้อผิดพลาดในการบันทึกผลโหวต กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="vote-container">
@@ -64,7 +108,6 @@ export default function VotePage({ userId, goResults }: Props) {
       <section className="vote-section">
         <h3>เลือกพรรค</h3>
         <div className="selection-grid">
-          {/* แสดงรายชื่อพรรคทั้งหมด */}
           {parties.map((p) => (
             <button
               key={p.id}
@@ -81,7 +124,6 @@ export default function VotePage({ userId, goResults }: Props) {
       <section className="vote-section">
         <h3>เลือกผู้สมัครเขต {voterDistrict}</h3>
         <div className="selection-grid">
-          {/* แสดงรายชื่อผู้สมัครที่ถูกกรองมาแล้ว */}
           {filteredCandidates.map((c) => (
             <button
               key={c.id}
@@ -119,22 +161,20 @@ export default function VotePage({ userId, goResults }: Props) {
             งดออกเสียง
           </button>
         </div>
-
       </section>
 
       <button
         className="confirm-submit-btn"
         onClick={() => setShowConfirm(true)}
-        disabled={!selectedParty || !selectedCandidate || !selectedQuestion}
+        disabled={!selectedParty || !selectedCandidate || !selectedQuestion || isSubmitting}
       >
-        ยืนยันการโหวต
+        {isSubmitting ? "กำลังส่งข้อมูล..." : "ยืนยันการโหวต"}
       </button>
 
-      {/* 🛡️ Modal ยืนยัน (แยกเป็น CSS จะสะอาดกว่า) */}
+      {/* 🛡️ Modal ยืนยัน */}
       {showConfirm && (
-        <div className="modal-overlay"> {/* พื้นหลังสีดำจางๆ */}
-          <div className="modal-card"> {/* กล่อง Popup สีขาว */}
-
+        <div className="modal-overlay">
+          <div className="modal-card">
             <div className="modal-header">
               <h3>ยืนยันการลงคะแนน</h3>
             </div>
@@ -146,28 +186,28 @@ export default function VotePage({ userId, goResults }: Props) {
                 <div className="summary-item">
                   <span className="label">พรรค</span>
                   <span className="value">
-                    {parties.find(p => p.id === selectedParty)?.name}
+                    {parties.find((p) => p.id === selectedParty)?.name}
                   </span>
                 </div>
 
                 <div className="summary-item">
                   <span className="label">ผู้สมัคร</span>
                   <span className="value">
-                    {candidates.find(c => c.id === selectedCandidate)?.fname}{" "}
-                    {candidates.find(c => c.id === selectedCandidate)?.lname}
+                    {(() => {
+                      const candidate = candidates.find((c) => c.id === selectedCandidate);
+                      return candidate ? `${candidate.fname} ${candidate.lname}` : "";
+                    })()}
                   </span>
                 </div>
 
                 <div className="summary-item">
                   <span className="label">ประชามติ</span>
                   <span className="value">
-                    {
-                      selectedQuestion === 1
-                        ? "เห็นด้วย"
-                        : selectedQuestion === 2
-                          ? "ไม่เห็นด้วย"
-                          : "งดออกเสียง"
-                    }
+                    {selectedQuestion === 1
+                      ? "เห็นด้วย"
+                      : selectedQuestion === 2
+                        ? "ไม่เห็นด้วย"
+                        : "งดออกเสียง"}
                   </span>
                 </div>
               </div>
@@ -177,23 +217,21 @@ export default function VotePage({ userId, goResults }: Props) {
               <button
                 className="btn-back"
                 onClick={() => setShowConfirm(false)}
+                disabled={isSubmitting}
               >
                 แก้ไขข้อมูล
               </button>
               <button
                 className="btn-confirm"
-                onClick={() => {
-                  handleConfirm();
-                  setShowConfirm(false);
-                }}
+                onClick={() => handleConfirm()}
+                disabled={isSubmitting}
               >
-                ยืนยันโหวต
+                {isSubmitting ? "กำลังบันทึก..." : "ยืนยันโหวต"}
               </button>
             </div>
-
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

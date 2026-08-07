@@ -36,3 +36,7 @@ body::-webkit-scrollbar,
 #root::-webkit-scrollbar {
   display: none;             /* Chrome, Safari, Edge */
 }
+
+.loading-text {
+  text-align: center;
+}

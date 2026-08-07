@@ -1,22 +1,23 @@
 type Props = {
-  questionResults: Record<number, number>
-}
+  // เปลี่ยน Key เป็น string ให้ตรงกับข้อมูลจาก Backend
+  questionResults: Record<string, number>;
+};
 
 export default function ResultQuestion({ questionResults }: Props) {
-  const yes = questionResults[1] || 0
-  const no = questionResults[2] || 0
-  const abs = questionResults[3] || 0
+  // ดึงค่าโดยใช้ String Key ที่ตรงกับ Database หรือ Enum ของ Backend
+  const yes = questionResults["เห็นด้วย"] || questionResults["เห็นชอบ"] || 0;
+  const no = questionResults["ไม่เห็นด้วย"] || questionResults["ไม่เห็นชอบ"] || 0;
+  const abs = questionResults["งดออกเสียง"] || 0;
 
-  const totalQ = yes + no + abs
+  const totalQ = yes + no + abs;
 
-  // ✅ คิด % เป็น number
-  const yesPct = (yes / totalQ) * 100
-  const noPct = (no / totalQ) * 100
-  const absPct = (abs / totalQ) * 100
+  // คิด % โดยป้องกันการหารด้วย 0
+  const yesPct = totalQ > 0 ? (yes / totalQ) * 100 : 0;
+  const noPct = totalQ > 0 ? (no / totalQ) * 100 : 0;
+  const absPct = totalQ > 0 ? (abs / totalQ) * 100 : 0;
 
   return (
     <div className="block question-layout">
-
       {totalQ === 0 ? (
         <div className="block-empty">
           <p className="empty">ยังไม่มีคะแนน</p>
@@ -25,35 +26,35 @@ export default function ResultQuestion({ questionResults }: Props) {
         <div className="block-body">
           <p className="question-text">ท่านเห็นชอบว่าสมควรมีรัฐธรรมนูญฉบับใหม่หรือไม่?</p>
 
-          {/* 🔥 Progress bar Container ตัวใหม่ ครอบเพื่อให้โค้งมนสไตล์แคปซูล */}
+          {/* 🔥 Progress bar Container */}
           <div className="progress-bar">
-              {yes > 0 && (
-                <div
-                  className="bar yes"
-                  style={{ width: `${yesPct}%` }}
-                >
-                  {yesPct.toFixed(1)}%
-                </div>
-              )}
+            {yes > 0 && (
+              <div
+                className="bar yes"
+                style={{ width: `${yesPct}%` }}
+              >
+                {yesPct.toFixed(1)}%
+              </div>
+            )}
 
-              {no > 0 && (
-                <div
-                  className="bar no"
-                  style={{ width: `${noPct}%` }}
-                >
-                  {noPct.toFixed(1)}%
-                </div>
-              )}
+            {no > 0 && (
+              <div
+                className="bar no"
+                style={{ width: `${noPct}%` }}
+              >
+                {noPct.toFixed(1)}%
+              </div>
+            )}
 
-              {abs > 0 && (
-                <div
-                  className="bar abstain"
-                  style={{ width: `${absPct}%` }}
-                >
-                  {absPct.toFixed(1)}%
-                </div>
-              )}
-            </div>
+            {abs > 0 && (
+              <div
+                className="bar abstain"
+                style={{ width: `${absPct}%` }}
+              >
+                {absPct.toFixed(1)}%
+              </div>
+            )}
+          </div>
 
           {/* 📊 Cards Grid แสดงสถิติเสียง */}
           <div className="stats-grid">
@@ -78,6 +79,5 @@ export default function ResultQuestion({ questionResults }: Props) {
         </div>
       )}
     </div>
-  )
+  );
 }
-

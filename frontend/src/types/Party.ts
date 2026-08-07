@@ -1,5 +1,7 @@
-export type Party = {
-  id: number
-  name: string
-  policies: string[]
+export interface Party {
+  _id: string;
+  name: string;
+  number: number;
+  createdAt?: string;
+  updatedAt?: string;
 }

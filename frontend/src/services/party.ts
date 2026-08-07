@@ -1,9 +1,4 @@
-import { PartiesList } from "../data/parties";
-
-export function getParties() {
-  return PartiesList;
-}
-
-export function getPartyById(id: number) {
-  return PartiesList.find(p => p.id === id);
+export async function getParties() {
+  const response = await fetch("/api/v1/parties");
+  return await response.json();
 }

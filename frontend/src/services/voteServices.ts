@@ -1,48 +1,38 @@
-import type { Vote } from "../types/Vote.ts"
-import { Voters } from "../data/voters.ts"
+import type { GetResultsResponse } from "../types/Vote";
 
-export function GetVotes(): Vote[] {
-  const data = localStorage.getItem("votes")
-  return data ? JSON.parse(data) : []
+export async function sendVote(
+  voter: string,
+  party: string,
+  candidate: string,
+  referendum: string
+) {
+  const response = await fetch("/api/v1/vote", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      voter,
+      party,
+      candidate,
+      referendum,
+    }),
+  });
+
+  return await response.json();
 }
 
-export function SaveVotes(votes: Vote[]) {
-  localStorage.setItem("votes", JSON.stringify(votes))
-}
+export async function getResults(): Promise<GetResultsResponse> {
+  const response = await fetch("/api/v1/vote/results", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
-export function Vote(vote: Vote) {
-  const votes = GetVotes()
-
-  const already = votes.find(
-    (v) => v.voterId === vote.voterId && v.voteType === vote.voteType
-  )
-
-  if (already) {
-    return { success: false, message: "คุณโหวตไปแล้ว" }
+  if (!response.ok) {
+    throw new Error("Failed to fetch vote results");
   }
 
-  votes.push({...vote})
-  SaveVotes(votes)
-
-  return { success: true, message: "โหวตสำเร็จ" }
-}
-
-export function GetResults(voteType: string) {
-  const votes = GetVotes()
-  const result: Record<number, number> = {}
-
-  votes.forEach((v) => {
-    if (v.voteType === voteType) {
-      result[v.targetId] =
-        (result[v.targetId] || 0) + 1
-    }
-  })
-
-  return result
-}
-
-export function getVoterById(id: number | null) {
-  if (id === null) return undefined;
-
-  return Voters.find(v => v.id === id)
+  return await response.json();
 }

@@ -79,12 +79,13 @@ const loginVoter = async (req: Request, res: Response) => {
             success: true,
             message: "Voter Logged In",
             voter: {
-                id: voter.id,
+                _id: voter._id,
                 studentId: voter.studentId,
                 firstname: voter.firstname,
-                lastname: voter.lastname
+                lastname: voter.lastname,
+                hasVoted: voter.hasVoted
             }
-        })
+        });
 
     } catch (error) {
         res.status(500).json({

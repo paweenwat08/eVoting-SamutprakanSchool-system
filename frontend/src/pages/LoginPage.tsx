@@ -1,28 +1,31 @@
-import { useState, useRef, useEffect } from "react"
-import { login } from "../services/auth.ts"
-import '../styles/LoginPage.css'
+import { useState, useRef, useEffect } from "react";
+import { login } from "../services/auth";
+import "../styles/LoginPage.css";
 
 type Props = {
-  setUser: React.Dispatch<React.SetStateAction<number | null>>
-  goVote: () => void
-  goAlready: () => void
-}
+  setUser: React.Dispatch<React.SetStateAction<string | null>>;
+  goVote: () => void;
+  goAlready: () => void;
+};
 
-export default function LoginPage({ setUser, goVote, goAlready }: Props) {
-  const [fname, setFname] = useState("")
-  const [lname, setLname] = useState("")
-  const [message, setMessage] = useState("")
+export default function LoginPage({
+  setUser,
+  goVote,
+  goAlready,
+}: Props) {
+  const [studentID, setStudentID] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-  const fnameRef = useRef<HTMLInputElement>(null)
-  const lnameRef = useRef<HTMLInputElement>(null)
+  const studentIdRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
-  // เข้าหน้าล้อกอินแล้วจะโฟกัสไปที่ชื่ออัตโนมัติ
   useEffect(() => {
-    fnameRef.current?.focus()
-  }, [])
+    studentIdRef.current?.focus();
+  }, []);
 
-  const handleLogin = () => {
-    const result = login(fname, lname);
+  const handleLogin = async () => {
+    const result = await login(studentID, password);
 
     if (!result.success) {
       if (result.message === "already") {
@@ -36,58 +39,62 @@ export default function LoginPage({ setUser, goVote, goAlready }: Props) {
 
     setMessage("");
 
-    if (!result.user) return;
-    setUser(result.user.id);
-    
+    // Login สำเร็จ
+    setUser(result.voter._id);
+
+    localStorage.setItem("voter", JSON.stringify(result.voter));
+
     goVote();
-  }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    handleLogin()
-  }
+    e.preventDefault();
+    handleLogin();
+  };
 
   return (
     <div className="login-wrapper">
-      <form className="login-card" onSubmit={handleSubmit}>
-        <h2>เข้าสู่ระบบ</h2>
+      <div className="login-card">
+        <form onSubmit={handleSubmit}>
+          <h2>เข้าสู่ระบบ</h2>
 
-        {message && (<div className="alert-box" title={message}>{message}</div>)}
+          {message && (
+            <div className="alert-box" title={message}>
+              {message}
+            </div>
+          )}
 
-        {/* ชื่อ */}
-        <div className="input-field">
-          <label>
-            <p>ชื่อ</p>
-            <input
-              ref={fnameRef}
-              type="text"
-              placeholder="ระบุชื่อ"
-              value={fname}
-              onChange={(e) => setFname(e.target.value)}
-            />
-          </label>
-        </div>
+          <div className="input-field">
+            <label>
+              รหัสนักเรียน
+              <input
+                ref={studentIdRef}
+                type="text"
+                placeholder="ระบุรหัสนักเรียน"
+                value={studentID}
+                onChange={(e) => setStudentID(e.target.value)}
+              />
+            </label>
+          </div>
 
-        {/* นามสกุล */}
-        <div className="input-field">
-          <label>
-            <p>นามสกุล</p>
-            <input
-              ref={lnameRef}
-              type="text"
-              placeholder="ระบุนามสกุล"
-              value={lname}
-              onChange={(e) => setLname(e.target.value)}
-            />
-          </label>
-        </div>
+          <div className="input-field">
+            <label>
+              รหัสผ่าน
+              <input
+                ref={passwordRef}
+                type="password"
+                placeholder="ระบุรหัสผ่าน"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
+          </div>
 
-        {/* ปุ่มเข้าสู่ระบบ */}
-        <button type="submit" className="btn-login">
-          เข้าสู่ระบบ
-        </button>
-
-      </form>
+          <button type="submit" className="btn-login">
+            เข้าสู่ระบบ
+          </button>
+        </form>
+      </div>
     </div>
-  )
+  );
 }

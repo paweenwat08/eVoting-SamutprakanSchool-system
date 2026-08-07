@@ -1,42 +1,14 @@
-import { Voters } from "../data/voters";
-import { GetVotes } from "./voteServices";
+export async function login(studentId: string, password: string) {
+  const response = await fetch("/api/v1/voters/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      studentId,
+      password,
+    }),
+  });
 
-export function login(fname: string, lname: string) {
-  const cleanFname = fname.trim();
-  const cleanLname = lname.trim();
-
-  if (!cleanFname || !cleanLname) {
-    return {
-      success: false,
-      message: "กรุณากรอกชื่อและนามสกุลให้ครบ",
-    };
-  }
-
-  const user = Voters.find(
-    (v) =>
-      v.fname.toLowerCase() === cleanFname.toLowerCase() &&
-      v.lname.toLowerCase() === cleanLname.toLowerCase()
-  );
-
-  if (!user) {
-    return {
-      success: false,
-      message: "ไม่พบข้อมูลผู้ใช้งานในระบบ",
-    };
-  }
-
-  const votes = GetVotes();
-  const hasVoted = votes.some((v) => v.voterId === user.id);
-
-  if (hasVoted) {
-    return {
-      success: false,
-      message: "already",
-    };
-  }
-
-  return {
-    success: true,
-    user,
-  };
+  return await response.json();
 }
