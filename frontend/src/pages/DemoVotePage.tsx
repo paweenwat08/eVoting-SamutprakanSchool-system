@@ -9,8 +9,16 @@ type Props = {
   goResults: () => void;
 };
 
+// ฟังก์ชันสำหรับดึง String ID จาก ObjectId หรือ String ID ปกติ
+const getId = (item: any): string => {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  if (typeof item._id === "object" && item._id?.$oid) return item._id.$oid;
+  return String(item._id || item.id || "");
+};
+
 export default function DemoVotePage({ goResults }: Props) {
-  // 1. เปลี่ยน Type ของ State ID เป็น string | null
+  // 1. State ต่างๆ
   const [selectedParty, setSelectedParty] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null);
@@ -47,8 +55,8 @@ export default function DemoVotePage({ goResults }: Props) {
     return <p className="loading-text">กำลังโหลดระบบทดลองเลือกตั้ง...</p>;
   }
 
-  // 3. กรองผู้สมัครเขต 1 (หรือเปลี่ยนเลขเขตตามความเหมาะสม)
-  const filteredCandidates = candidates.filter((c) => c.district === 1);
+  // 3. กรองผู้สมัครเขต 1 (ใช้ Number() ป้องกันการเปรียบเทียบผิด Type)
+  const filteredCandidates = candidates.filter((c) => Number(c.district) === 1);
 
   const handleConfirm = () => {
     setShowConfirm(false);
@@ -63,15 +71,18 @@ export default function DemoVotePage({ goResults }: Props) {
       <section className="vote-section">
         <h3>เลือกพรรค</h3>
         <div className="selection-grid">
-          {parties.map((p) => (
-            <button
-              key={p._id}
-              className={`vote-btn ${selectedParty === p._id ? "active" : ""}`}
-              onClick={() => setSelectedParty(p._id)}
-            >
-              {p.name}
-            </button>
-          ))}
+          {parties.map((p) => {
+            const partyId = getId(p);
+            return (
+              <button
+                key={partyId}
+                className={`vote-btn ${selectedParty === partyId ? "active" : ""}`}
+                onClick={() => setSelectedParty(partyId)}
+              >
+                {p.name}
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -81,15 +92,19 @@ export default function DemoVotePage({ goResults }: Props) {
       <section className="vote-section">
         <h3>เลือกผู้สมัครเขต 1</h3>
         <div className="selection-grid">
-          {filteredCandidates.map((c) => (
-            <button
-              key={c._id}
-              className={`vote-btn ${selectedCandidate === c._id ? "active" : ""}`}
-              onClick={() => setSelectedCandidate(c._id)}
-            >
-              {c.firstname} {c.lastname}
-            </button>
-          ))}
+          {filteredCandidates.map((c) => {
+            const candidateId = getId(c);
+            return (
+              <button
+                key={candidateId}
+                className={`vote-btn ${selectedCandidate === candidateId ? "active" : ""}`}
+                onClick={() => setSelectedCandidate(candidateId)}
+              >
+                <span className="candidate-number">{c.number ?? "-"}</span>
+                <span className="candidate-name">{c.firstname} {c.lastname}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -146,7 +161,7 @@ export default function DemoVotePage({ goResults }: Props) {
                     <div className="summary-item">
                       <span className="summary-label">พรรค</span>
                       <span className="summary-value">
-                        {parties.find((p) => p._id === selectedParty)?.name}
+                        {parties.find((p) => getId(p) === selectedParty)?.name}
                       </span>
                     </div>
 
@@ -154,8 +169,10 @@ export default function DemoVotePage({ goResults }: Props) {
                       <span className="summary-label">ผู้สมัคร</span>
                       <span className="summary-value">
                         {(() => {
-                          const candidate = candidates.find((c) => c._id === selectedCandidate);
-                          return candidate ? `${candidate.firstname} ${candidate.lastname}` : "";
+                          const candidate = candidates.find((c) => getId(c) === selectedCandidate);
+                          return candidate 
+                            ? `${candidate.number ?? "-"} ${candidate.firstname} ${candidate.lastname}` 
+                            : "";
                         })()}
                       </span>
                     </div>

@@ -6,6 +6,14 @@ import type { Candidate } from "../types/Candidate";
 import '../styles/DetailPage/DetailPage.css';
 import '../styles/DetailPage/DetailBox.css';
 
+// ฟังก์ชันดึง ID รองรับทั้ง String และ Mongo ObjectId
+const getId = (item: any): string => {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  if (typeof item._id === "object" && item._id?.$oid) return item._id.$oid;
+  return String(item._id || item.id || "");
+};
+
 export default function DetailsPage() {
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
@@ -45,10 +53,10 @@ export default function DetailsPage() {
   const filteredCandidates =
     selectedDistrictDetail === "all"
       ? candidates
-      : candidates.filter((c) => c.district === selectedDistrictDetail);
+      : candidates.filter((c) => Number(c.district) === Number(selectedDistrictDetail));
 
-  const selectedParty = parties.find((p) => p._id === selectedPartyId);
-  const selectedCandidate = candidates.find((c) => c._id === selectedCandidateId);
+  const selectedParty = parties.find((p) => getId(p) === selectedPartyId);
+  const selectedCandidate = candidates.find((c) => getId(c) === selectedCandidateId);
 
   return (
     <>
@@ -57,22 +65,24 @@ export default function DetailsPage() {
         <div className="info-container">
           <h2 className="section-title">รายชื่อพรรค</h2>
           <div className="party-grid">
-            {parties.map((party) => (
-              <div
-                key={party._id}
-                className="party-info-card"
-                onClick={() => {
-                  setSelectedPartyId(party._id);
-                  setSelectedCandidateId(null);
-                }}
-              >
-                <div className="party-number">{party.number}</div>
-                <div className="party-detail">
-                  <h3>{party.name}</h3>
-                  {/* ❌ ตัดส่วน policy-list ออกไปแล้ว */}
+            {parties.map((party) => {
+              const partyId = getId(party);
+              return (
+                <div
+                  key={partyId}
+                  className="party-info-card"
+                  onClick={() => {
+                    setSelectedPartyId(partyId);
+                    setSelectedCandidateId(null);
+                  }}
+                >
+                  <div className="party-number">{party.number ?? "-"}</div>
+                  <div className="party-detail">
+                    <h3>{party.name}</h3>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <hr className="divider" />
@@ -102,27 +112,37 @@ export default function DetailsPage() {
           {/* รายการ Card ผู้สมัคร */}
           <div className="candidate-grid">
             {filteredCandidates.map((candidate) => {
-              const partyName =
-                typeof candidate.party === "object"
-                  ? candidate.party?.name
-                  : parties.find((p) => p._id === candidate.party)?.name || "ผู้สมัครอิสระ";
+              const candidateId = getId(candidate);
+
+              // หาชื่อพรรค
+              let partyName = "ผู้สมัครอิสระ";
+              if (typeof candidate.party === "object" && candidate.party?.name) {
+                partyName = candidate.party.name;
+              } else {
+                const partyObj = parties.find((p) => getId(p) === getId(candidate.party));
+                if (partyObj) partyName = partyObj.name;
+              }
 
               return (
                 <div
-                  key={candidate._id}
+                  key={candidateId}
                   className="candidate-info-card"
                   onClick={() => {
-                    setSelectedCandidateId(candidate._id);
+                    setSelectedCandidateId(candidateId);
                     setSelectedPartyId(null);
                   }}
                 >
+                  {/* เปลี่ยนกลับเป็นอีโมจิคนเหมือนเดิม */}
                   <div className="candidate-avatar">👤</div>
                   <div className="candidate-text">
                     <h4>
                       {candidate.firstname} {candidate.lastname}
                     </h4>
                     <p className="party-tag">สังกัด: {partyName}</p>
-                    <p className="district-tag">เขตเลือกตั้งที่ {candidate.district}</p>
+                    {/* เปลี่ยนเป็นรูปแบบ เขต X หมายเลข Y */}
+                    <p className="district-tag">
+                      เขต {candidate.district} หมายเลข {candidate.number ?? "-"}
+                    </p>
                   </div>
                 </div>
               );
@@ -144,36 +164,39 @@ export default function DetailsPage() {
             ← กลับ
           </button>
 
-          <h3>🏛️ {selectedParty.name} (หมายเลข {selectedParty.number})</h3>
-
-          {/* ❌ ตัดส่วน "นโยบายหลัก" ออกไปแล้ว */}
+          <h3>🏛️ {selectedParty.name} (หมายเลข {selectedParty.number ?? "-"})</h3>
 
           <h4 style={{ marginTop: "20px" }}>👤 ผู้สมัครในพรรคนี้</h4>
           {(() => {
             const partyCandidates = candidates.filter((c) => {
-              if (typeof c.party === "object") return c.party?._id === selectedParty._id;
-              return c.party === selectedParty._id;
+              const cPartyId = typeof c.party === "object" ? getId(c.party) : String(c.party);
+              return cPartyId === getId(selectedParty);
             });
 
             if (partyCandidates.length === 0) return <p>ไม่มีข้อมูลผู้สมัครในพรรคนี้</p>;
 
             return (
               <div className="candidate-list">
-                {partyCandidates.map((c) => (
-                  <div
-                    key={c._id}
-                    className="mini-candidate-card"
-                    onClick={() => {
-                      setSelectedCandidateId(c._id);
-                      setSelectedPartyId(null);
-                    }}
-                  >
-                    <span>
-                      👤 {c.firstname} {c.lastname}
-                    </span>
-                    <span className="district">เขต {c.district}</span>
-                  </div>
-                ))}
+                {partyCandidates.map((c) => {
+                  const candidateId = getId(c);
+                  return (
+                    <div
+                      key={candidateId}
+                      className="mini-candidate-card"
+                      onClick={() => {
+                        setSelectedCandidateId(candidateId);
+                        setSelectedPartyId(null);
+                      }}
+                    >
+                      <span>
+                        👤 {c.firstname} {c.lastname}
+                      </span>
+                      <span className="district">
+                        เขต {c.district} หมายเลข {c.number ?? "-"}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             );
           })()}
@@ -197,30 +220,32 @@ export default function DetailsPage() {
             👤 {selectedCandidate.firstname} {selectedCandidate.lastname}
           </h3>
           <p>
+            <strong>เขต / หมายเลข:</strong> เขต {selectedCandidate.district} หมายเลข {selectedCandidate.number ?? "-"}
+          </p>
+          <p>
             <strong>พรรค:</strong>{" "}
             {(() => {
               const partyObj =
                 typeof selectedCandidate.party === "object"
                   ? selectedCandidate.party
-                  : parties.find((p) => p._id === selectedCandidate.party);
+                  : parties.find((p) => getId(p) === getId(selectedCandidate.party));
 
               if (!partyObj) return <span>ผู้สมัครอิสระ</span>;
+
+              const partyId = getId(partyObj);
 
               return (
                 <span
                   className="link-text"
                   onClick={() => {
-                    setSelectedPartyId(partyObj._id);
+                    setSelectedPartyId(partyId);
                     setSelectedCandidateId(null);
                   }}
                 >
-                  {partyObj.name}
+                  {partyObj.name} (หมายเลข {partyObj.number ?? "-"})
                 </span>
               );
             })()}
-          </p>
-          <p>
-            <strong>เขตเลือกตั้ง:</strong> {selectedCandidate.district}
           </p>
         </div>
       )}

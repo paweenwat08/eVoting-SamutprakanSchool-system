@@ -2,6 +2,7 @@ import type { Party } from "./Party";
 
 export interface Candidate {
   _id: string;
+  number: number;
   firstname: string;
   lastname: string;
   district: number;

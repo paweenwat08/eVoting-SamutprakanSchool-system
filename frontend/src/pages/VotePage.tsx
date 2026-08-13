@@ -1,25 +1,22 @@
+import { useState, useEffect } from "react";
 import { getParties } from "../services/party";
 import { getCandidates } from "../services/candidate";
 import { sendVote } from "../services/voteServices";
-import { useState, useEffect } from "react";
+import type { Party } from "../types/Party";
+import type { Candidate } from "../types/Candidate";
 import '../styles/VotePage.css';
 
-// 1. เพิ่ม Type Definitions สำหรับข้อมูล API
-interface Party {
-  id: string;
-  name: string;
-}
-
-interface Candidate {
-  id: string;
-  fname: string;
-  lname: string;
-  district: number | string;
-}
-
 type Props = {
-  userId: number | null;
+  userId: string | null;
   goResults: () => void;
+};
+
+// ฟังก์ชันสำหรับดึง String ID จาก ObjectId หรือ String ID ปกติ
+const getId = (item: any): string => {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  if (typeof item._id === "object" && item._id?.$oid) return item._id.$oid;
+  return String(item._id || item.id || "");
 };
 
 export default function VotePage({ userId, goResults }: Props) {
@@ -27,68 +24,79 @@ export default function VotePage({ userId, goResults }: Props) {
   const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-
-  // เพิ่ม State สำหรับจัดการสถานะ Loading ระหว่างยิง API
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 2. ระบุ Type ให้กับ State
   const [parties, setParties] = useState<Party[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // 1. ดึงข้อมูลพรรคและผู้สมัครจาก API
   useEffect(() => {
     async function loadData() {
       try {
-        const partyData = await getParties();
-        const candidateData = await getCandidates();
+        const partyRes = await getParties();
+        const candidateRes = await getCandidates();
 
-        setParties(partyData.parties ?? []);
-        setCandidates(candidateData.candidates ?? []);
+        const partyList = Array.isArray(partyRes) ? partyRes : partyRes?.parties ?? [];
+        const candidateList = Array.isArray(candidateRes) ? candidateRes : candidateRes?.candidates ?? [];
+
+        setParties(partyList);
+        setCandidates(candidateList);
       } catch (error) {
         console.error("Failed to load vote data:", error);
+      } finally {
+        setLoading(false);
       }
     }
 
     loadData();
   }, []);
 
-  // ดึงข้อมูล Voter จาก LocalStorage
+  // 2. ดึงข้อมูล Voter จาก LocalStorage ที่เก็บไว้ตอน Login
   const voterRaw = localStorage.getItem("voter");
   const voter = voterRaw ? JSON.parse(voterRaw) : null;
 
-  // 3. ปรับ Early Return ให้คืนค่า null แทน undefined
+  if (loading) {
+    return <p className="loading-text">กำลังโหลดข้อมูลการเลือกตั้ง...</p>;
+  }
+
   if (!voter) {
-    return <p>ไม่พบข้อมูลผู้ลงคะแนน กรุณาเข้าสู่ระบบใหม่</p>;
+    return <p className="error-text">ไม่พบข้อมูลผู้ลงคะแนน กรุณาเข้าสู่ระบบใหม่</p>;
   }
 
-  if (!userId) {
-    return <p>กรุณา login ก่อน</p>;
+  const currentUserId = userId || getId(voter);
+
+  if (!currentUserId) {
+    return <p className="error-text">กรุณาเข้าสู่ระบบก่อนลงคะแนน</p>;
   }
 
+  // 3. ดึงเขตของผู้โหวต (เช่น เขต 1)
   const voterDistrict = voter.district;
 
+  // 4. กรองผู้สมัครให้แสดงเฉพาะคนที่ตรงกับเขตของผู้โหวต
   const filteredCandidates = candidates.filter(
-    (c) => c.district === voterDistrict
+    (c) => Number(c.district) === Number(voterDistrict)
   );
 
-  // 4. ปรับเป็น async/await และเปลี่ยน Vote เป็น sendVote
+  // 5. ฟังก์ชันส่งผลการลงคะแนนไปยัง Backend
   const handleConfirm = async () => {
-    // ตรวจสอบความถูกต้องของข้อมูล
-    if (!userId || !selectedParty || !selectedCandidate || !selectedQuestion) return;
+    if (!currentUserId || !selectedParty || !selectedCandidate || !selectedQuestion) return;
 
     setIsSubmitting(true);
 
     try {
-      // แปลงตัวเลือกประชามติ (1, 2, 3) ให้เป็นข้อความ string ตามที่ API คาดหวัง
       const referendumText =
-        selectedQuestion === 1 ? "เห็นด้วย" :
-          selectedQuestion === 2 ? "ไม่เห็นด้วย" : "งดออกเสียง";
+        selectedQuestion === 1
+          ? "เห็นด้วย"
+          : selectedQuestion === 2
+          ? "ไม่เห็นด้วย"
+          : "งดออกเสียง";
 
-      // เรียก sendVote ครั้งเดียว พร้อมส่ง พารามิเตอร์ 4 ตัวเรียงตามลำดับ
       await sendVote(
-        String(userId),            // voter
-        selectedParty,             // party
-        selectedCandidate,         // candidate
-        referendumText             // referendum (หรือเปลี่ยนเป็น String(selectedQuestion) ถ้า API รับเป็น "1","2","3")
+        String(currentUserId),
+        selectedParty,
+        selectedCandidate,
+        referendumText
       );
 
       goResults();
@@ -102,37 +110,49 @@ export default function VotePage({ userId, goResults }: Props) {
 
   return (
     <div className="vote-container">
+      <h2>ยินดีต้อนรับ {voter.firstname} {voter.lastname}</h2>
       <h2>เลือกพรรคและผู้สมัครที่คุณชอบ</h2>
 
       {/* 🏛️ Section พรรค */}
       <section className="vote-section">
         <h3>เลือกพรรค</h3>
         <div className="selection-grid">
-          {parties.map((p) => (
-            <button
-              key={p.id}
-              className={`vote-btn ${selectedParty === p.id ? "active" : ""}`}
-              onClick={() => setSelectedParty(p.id)}
-            >
-              {p.name}
-            </button>
-          ))}
+          {parties.map((p) => {
+            const partyId = getId(p);
+            return (
+              <button
+                key={partyId}
+                className={`vote-btn ${selectedParty === partyId ? "active" : ""}`}
+                onClick={() => setSelectedParty(partyId)}
+              >
+                {p.name}
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* 👤 Section ผู้สมัคร */}
+      {/* 👤 Section ผู้สมัคร (แสดงเฉพาะเขตของผู้โหวตคนนั้น) */}
       <section className="vote-section">
-        <h3>เลือกผู้สมัครเขต {voterDistrict}</h3>
+        <h3>เลือกผู้สมัครเขต {voterDistrict ?? "-"}</h3>
         <div className="selection-grid">
-          {filteredCandidates.map((c) => (
-            <button
-              key={c.id}
-              className={`vote-btn ${selectedCandidate === c.id ? "active" : ""}`}
-              onClick={() => setSelectedCandidate(c.id)}
-            >
-              {c.fname} {c.lname}
-            </button>
-          ))}
+          {filteredCandidates.length === 0 ? (
+            <p className="empty-text">ไม่พบผู้สมัครในเขต {voterDistrict}</p>
+          ) : (
+            filteredCandidates.map((c) => {
+              const candidateId = getId(c);
+              return (
+                <button
+                  key={candidateId}
+                  className={`vote-btn ${selectedCandidate === candidateId ? "active" : ""}`}
+                  onClick={() => setSelectedCandidate(candidateId)}
+                >
+                  <span className="candidate-number">{c.number ?? "-"}</span>
+                  <span className="candidate-name">{c.firstname} {c.lastname}</span>
+                </button>
+              );
+            })
+          )}
         </div>
       </section>
 
@@ -186,7 +206,7 @@ export default function VotePage({ userId, goResults }: Props) {
                 <div className="summary-item">
                   <span className="label">พรรค</span>
                   <span className="value">
-                    {parties.find((p) => p.id === selectedParty)?.name}
+                    {parties.find((p) => getId(p) === selectedParty)?.name}
                   </span>
                 </div>
 
@@ -194,8 +214,10 @@ export default function VotePage({ userId, goResults }: Props) {
                   <span className="label">ผู้สมัคร</span>
                   <span className="value">
                     {(() => {
-                      const candidate = candidates.find((c) => c.id === selectedCandidate);
-                      return candidate ? `${candidate.fname} ${candidate.lname}` : "";
+                      const candidate = candidates.find((c) => getId(c) === selectedCandidate);
+                      return candidate 
+                        ? `${candidate.number ?? "-"} ${candidate.firstname} ${candidate.lastname}` 
+                        : "";
                     })()}
                   </span>
                 </div>
@@ -206,8 +228,8 @@ export default function VotePage({ userId, goResults }: Props) {
                     {selectedQuestion === 1
                       ? "เห็นด้วย"
                       : selectedQuestion === 2
-                        ? "ไม่เห็นด้วย"
-                        : "งดออกเสียง"}
+                      ? "ไม่เห็นด้วย"
+                      : "งดออกเสียง"}
                   </span>
                 </div>
               </div>
@@ -223,7 +245,7 @@ export default function VotePage({ userId, goResults }: Props) {
               </button>
               <button
                 className="btn-confirm"
-                onClick={() => handleConfirm()}
+                onClick={handleConfirm}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "กำลังบันทึก..." : "ยืนยันโหวต"}

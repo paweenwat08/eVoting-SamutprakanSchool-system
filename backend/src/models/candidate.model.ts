@@ -2,6 +2,11 @@ import mongoose, { Schema } from "mongoose";
 
 const candidateSchema = new Schema(
 {
+    number: {
+        type: Number,
+        required: true,
+        trim: true
+    },
     firstname: {
         type: String,
         required: true,

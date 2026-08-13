@@ -11,10 +11,10 @@ const app = express(); // create an express app
 app.use(express.json());
 
 // routes declaration
+app.use("/api/v1/vote", voteRouter)
 app.use("/api/v1/voters", voterRouter);
 app.use("/api/v1/parties", partyRouter);
 app.use("/api/v1/candidates", candidateRouter);
-app.use("/api/v1/vote", voteRouter)
 
 // example routes: http://localhost:4000/api/v1/voters/register
 

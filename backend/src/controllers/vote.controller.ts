@@ -1,5 +1,6 @@
 import { Vote } from "../models/vote.model";
 import { Voter } from "../models/voter.model";
+import { Candidate } from "../models/candidate.model";
 import { Request, Response } from "express";
 
 const sendVote = async (req: Request, res: Response) => {
@@ -27,6 +28,22 @@ const sendVote = async (req: Request, res: Response) => {
             return res.status(400).json({
                 success: false,
                 message: "You have already voted"
+            });
+        }
+
+        const candidateData = await Candidate.findById(candidate);
+
+        if (!candidateData) {
+            return res.status(404).json({
+                success: false,
+                message: "Candidate not found"
+            });
+        }
+
+        if (candidateData.district !== voterData.district) {
+            return res.status(400).json({
+                success: false,
+                message: "Candidate is not in voter's district"
             });
         }
 
@@ -63,7 +80,7 @@ const getVotes = async (req: Request, res: Response) => {
             .populate("voter")
             .populate("party")
             .populate("candidate");
-            
+
         res.status(200).json({
             success: true,
             votes

@@ -25,6 +25,27 @@
     cursor: pointer;
     transition: all 0.2s;
 }
+
+.candidate-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #f1f5f9;
+  color: #334155;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 8px; /* หรือ 50% ถ้าอยากได้แบบวงกลม */
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.candidate-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+
 .vote-btn, .op-btn {
   transition: all 0.2s ease;
 }

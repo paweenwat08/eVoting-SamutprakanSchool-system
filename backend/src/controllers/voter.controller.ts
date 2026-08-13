@@ -83,6 +83,7 @@ const loginVoter = async (req: Request, res: Response) => {
                 studentId: voter.studentId,
                 firstname: voter.firstname,
                 lastname: voter.lastname,
+                district: voter.district,
                 hasVoted: voter.hasVoted
             }
         });
