@@ -32,3 +32,13 @@ buzzer - esp32
 gnd-gnd
 i/o-g4
 vcc-3v3
+
+rfid rc522 - esp32
+sda-g5
+sck-g18
+mosi-g23
+miso-g19
+rst-g17
+irq-nc (ปล่อยว่าง)
+gnd-gnd
+3.3v-3v3

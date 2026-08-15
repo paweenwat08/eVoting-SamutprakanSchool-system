@@ -11,6 +11,13 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
+//RFID
+#include <SPI.h>
+#include <MFRC522.h>
+#define SS_PIN  5
+#define RST_PIN 17
+MFRC522 rfid(SS_PIN, RST_PIN); // <--- เพิ่มบรรทัดนี้เพื่อประกาศสร้างตัวแปร rfid
+
 // กำหนดพิน SDA และ SCL ชัดเจน
 #define SDA_PIN 21
 #define SCL_PIN 22
@@ -107,6 +114,7 @@ int selectedPartyNumber = 0;
 
 String selectedCandidateId = "";
 String selectedCandidateName = "";
+int selectedCandidateNumber = 0;
 
 String selectedReferendum = "";
 
@@ -157,6 +165,7 @@ void updateLCD();
 void playKeyBeep();
 void playSuccessSound();
 void playErrorSound();
+void checkRFID();
 void resetSystem();
 
 
@@ -173,6 +182,10 @@ void setup() {
   Wire.begin(SDA_PIN, SCL_PIN);
   lcd.init();
   lcd.backlight();
+
+  // --- เพิ่มการเริ่มต้น RFID ตรงนี้ ---
+  SPI.begin();       // เริ่มต้นระบบสื่อสาร SPI
+  rfid.PCD_Init();   // เริ่มต้นใช้งานโมดูล RFID RC522
 
   Serial.println();
   Serial.println("==============================");
@@ -219,6 +232,8 @@ void setup() {
 }
 
 void loop() {
+
+  checkRFID();
 
   char key = customKeypad.getKey();
 
@@ -346,21 +361,21 @@ void loop() {
 
     if (key == '1') {
 
-      selectedReferendum = "เห็นด้วย";
+      selectedReferendum = "YES";
 
       showConfirmation();
     }
 
     else if (key == '2') {
 
-      selectedReferendum = "ไม่เห็นด้วย";
+      selectedReferendum = "NO";
 
       showConfirmation();
     }
 
     else if (key == '3') {
 
-      selectedReferendum = "งดออกเสียง";
+      selectedReferendum = "ABSTAIN";
 
       showConfirmation();
     }
@@ -742,6 +757,7 @@ void selectParty(int partyNumber) {
       Serial.print("Party: ");
       Serial.println(selectedPartyName);
 
+      selectedPartyNumber = partyNumber;
 
       // โหลด Candidate
       // เพียงครั้งเดียว
@@ -895,6 +911,7 @@ void selectCandidate(int candidateNumber) {
       Serial.print("Candidate: ");
       Serial.println(selectedCandidateName);
 
+      selectedCandidateNumber = candidateNumber;
 
       selectReferendum();
 
@@ -923,34 +940,41 @@ void selectReferendum() {
 
 void showConfirmation() {
 
-  Serial.println();
-  Serial.println("==============================");
-  Serial.println("        CONFIRM VOTE");
-  Serial.println("==============================");
-
-  Serial.print("Voter: ");
-  Serial.println(voterName);
-
-  Serial.print("District: ");
-  Serial.println(voterDistrict);
-
-  Serial.print("Party: ");
-  Serial.println(selectedPartyName);
-
-  Serial.print("Candidate: ");
-  Serial.println(selectedCandidateName);
-
-  Serial.print("Referendum: ");
-  Serial.println(selectedReferendum);
-
-  Serial.println();
-  Serial.println("Press # to CONFIRM");
-  Serial.println("Press * to CANCEL");
-
+  Serial.println("\n==============================\n        CONFIRM VOTE\n==============================");
+  Serial.println("Voter: " + voterName);
+  Serial.println("Party: " + selectedPartyName);
+  Serial.println("Candidate: " + selectedCandidateName);
+  Serial.println("Referendum: " + selectedReferendum);
 
   currentState = CONFIRM_VOTE;
 
-  updateLCD();
+  // --- หน้าที่ 1: แสดงข้อมูลผู้ลงคะแนน ---
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Voter: " + voterName.substring(0, 9)); // ตัดคำไม่ให้เกิน 16 ตัวอักษร
+  lcd.setCursor(0, 1);
+  lcd.print("District: " + voterDistrict.substring(0, 10));
+  delay(3000); // ค้างไว้ 3 วินาที
+
+  // --- หน้าที่ 2: แสดงหมายเลขพรรคและหมายเลขผู้สมัคร ---
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Party No.: ");
+  lcd.print(selectedPartyNumber);     // แสดงเบอร์พรรคที่กด (เช่น 1, 2, 3)
+
+  lcd.setCursor(0, 1);
+  lcd.print("Cand. No.: ");
+  lcd.print(selectedCandidateNumber); // แสดงเบอร์ผู้สมัครที่กด (เช่น 1, 2, 5)
+
+  delay(3000); // ค้างไว้ 3 วินาที
+
+  // --- หน้าที่ 3: แสดงประเด็นลงมติและคำสั่งกดปุ่ม ---
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Ref: ");
+  lcd.print(selectedReferendum); // แสดง YES, NO หรือ ABSTAIN
+  lcd.setCursor(0, 1);
+  lcd.print("#:OK   *:CANCEL");
 }
 
 void sendVote() {
@@ -1133,6 +1157,39 @@ void playErrorSound() {
   digitalWrite(buzzerPin, HIGH);  // ปิดเสียง
 }
 
+void checkRFID() {
+  // ตรวจสอบว่ามีบัตรมาแตะหรือไม่
+  if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) {
+    return;
+  }
+
+  // อ่านค่า UID จากบัตรเปล่า แปลงเป็น String ตัวอักษรใหญ่ (เช่น "4A8B12C3")
+  String cardUID = "";
+  for (byte i = 0; i < rfid.uid.size; i++) {
+    cardUID += String(rfid.uid.uidByte[i] < 0x10 ? "0" : "");
+    cardUID += String(rfid.uid.uidByte[i], HEX);
+  }
+  cardUID.toUpperCase();
+
+  // ส่งเสียงบี๊บยืนยันการรับค่าบัตร
+  playKeyBeep();
+
+  // นำค่า UID ที่อ่านได้ไปเก็บใส่ inputStudentId
+  inputStudentId = cardUID;
+
+  Serial.println();
+  Serial.print("RFID Scanned UID: ");
+  Serial.println(inputStudentId);
+
+  // สั่งหยุดการสื่อสารกับบัตรใบเดิมชั่วคราว (กันอ่านซ้ำ)
+  rfid.PICC_HaltA();
+  rfid.PCD_StopCrypto1();
+
+  // เปลี่ยนสถานะไปหน้าใส่รหัสผ่านทันที
+  currentState = ENTER_PASSWORD;
+  updateLCD();
+}
+
 void resetSystem() {
 
   inputStudentId = "";
@@ -1149,6 +1206,7 @@ void resetSystem() {
 
   selectedCandidateId = "";
   selectedCandidateName = "";
+  selectedCandidateNumber = 0;
 
   selectedReferendum = "";
 
