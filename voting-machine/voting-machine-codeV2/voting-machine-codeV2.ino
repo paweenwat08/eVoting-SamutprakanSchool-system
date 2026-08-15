@@ -138,6 +138,8 @@ int partyCount = 0;
 Candidate candidates[MAX_CANDIDATES];
 int candidateCount = 0;
 
+//กำหนดค่า
+const int buzzerPin = 4;
 
 // =====================================================
 // FUNCTION PROTOTYPES
@@ -152,12 +154,20 @@ void selectReferendum();
 void showConfirmation();
 void sendVote();
 void updateLCD();
+void playKeyBeep();
+void playSuccessSound();
+void playErrorSound();
 void resetSystem();
+
 
 void setup() {
 
   Serial.begin(115200);
   delay(1000);
+
+  //buzzer
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(buzzerPin, HIGH);
 
   // LCD
   Wire.begin(SDA_PIN, SCL_PIN);
@@ -216,6 +226,7 @@ void loop() {
     return;
   }
 
+  playKeyBeep();
 
   // ===================================================
   // ENTER STUDENT ID
@@ -368,6 +379,10 @@ void loop() {
       Serial.println("VOTE CONFIRMED!");
 
       sendVote();
+
+      playKeyBeep();
+      playKeyBeep();
+
     }
 
     else if (key == '*') {
@@ -991,16 +1006,14 @@ void sendVote() {
     Serial.println();
     Serial.println("VOTE SUCCESS!");
 
-
     lcd.clear();
-
     lcd.setCursor(0, 0);
     lcd.print(" VOTE SUCCESS! ");
-
     lcd.setCursor(0, 1);
-    lcd.print("  Thank You!!  ");
+    lcd.print("   Thank You!!  ");
 
-    delay(2500);
+    playSuccessSound();  // <--- ใส่เสียงส่งสำเร็จตรงนี้
+    delay(2000);
   }
 
   else {
@@ -1009,13 +1022,12 @@ void sendVote() {
     Serial.println("VOTE FAILED!");
 
     lcd.clear();
-
     lcd.setCursor(0, 0);
     lcd.print("  VOTE FAILED!  ");
 
+    playErrorSound();  // <--- ใส่เสียงส่งล้มเหลวตรงนี้
     delay(2000);
   }
-
 
   resetSystem();
 }
@@ -1096,6 +1108,29 @@ void updateLCD() {
 
       break;
   }
+}
+
+void playKeyBeep() {
+  digitalWrite(buzzerPin, LOW);   // เปิดเสียง
+  delay(40);                      // ดังนาน 40 ms
+  digitalWrite(buzzerPin, HIGH);  // ปิดเสียง
+}
+
+void playSuccessSound() {
+  digitalWrite(buzzerPin, LOW);   // บี๊บ ครั้งที่ 1
+  delay(80);
+  digitalWrite(buzzerPin, HIGH);  // หยุดพัก
+  delay(80);
+  
+  digitalWrite(buzzerPin, LOW);   // บี๊บ ครั้งที่ 2
+  delay(120);
+  digitalWrite(buzzerPin, HIGH);  // ปิดเสียง
+}
+
+void playErrorSound() {
+  digitalWrite(buzzerPin, LOW);   // เปิดเสียงยาว
+  delay(500);                     // ดังนาน 500 ms
+  digitalWrite(buzzerPin, HIGH);  // ปิดเสียง
 }
 
 void resetSystem() {
