@@ -1,5 +1,3 @@
-
-
 .info-container {
     max-width: 900px;
     margin: 40px auto;
@@ -16,7 +14,8 @@
 /* Party Card */
 .party-grid {
     display: grid;
-    grid-template-columns: 1fr; /* พรรคเน้นแนวยาวเพื่อให้อ่านนโยบายง่าย */
+    grid-template-columns: 1fr;
+    /* พรรคเน้นแนวยาวเพื่อให้อ่านนโยบายง่าย */
     gap: 20px;
 }
 
@@ -24,7 +23,7 @@
     display: flex;
     background: white;
     border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     border: 1px solid #e2e8f0;
     overflow: hidden;
 }
@@ -32,12 +31,15 @@
 .party-number {
     background: #1e293b;
     color: white;
-    width: 90px;             /* ปรับเป็น 90px หรือ 100px */
-    flex-shrink: 0;          /* บังคับไม่ให้กล่องหดตัว */
+    width: 90px;
+    /* ปรับเป็น 90px หรือ 100px */
+    flex-shrink: 0;
+    /* บังคับไม่ให้กล่องหดตัว */
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2.2rem;       /* ตัวเลขใหญ่ ชัดเจน */
+    font-size: 2.2rem;
+    /* ตัวเลขใหญ่ ชัดเจน */
     font-weight: bold;
     text-align: center;
 }
@@ -46,7 +48,7 @@
     padding: 20px;
 }
 
-.party-detail > h3 {
+.party-detail>h3 {
     margin-top: 0px;
 }
 
@@ -105,41 +107,115 @@
 }
 
 .detail-district-selector-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 .detail-district-selector {
-  display: flex;
-  background: #f1f5f9;
-  padding: 4px;
-  border-radius: 30px;
-  border: 1px solid var(--color-border);
+    display: flex;
+    background: #f1f5f9;
+    padding: 4px;
+    margin: 0 auto;
+    border-radius: 30px;
+    border: 1px solid var(--color-border);
 }
 
 .detail-district-selector button {
-  padding: 8px 24px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 30px;
-  transition: all 0.2s;
+    padding: 8px 24px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 30px;
+    transition: all 0.2s;
 }
 
 .detail-district-selector button:hover {
-  color: var(--color-text-title);
+    color: var(--color-text-title);
 }
 
 .detail-district-selector button.active {
-  background: var(--color-primary);
-  color: #ffffff;
-  box-shadow: var(--shadow-md);
+    background: var(--color-primary);
+    color: #ffffff;
+    box-shadow: var(--shadow-md);
+}
+
+/* ==========================================
+   📱 MOBILE OPTIMIZATION
+========================================== */
+@media (max-width: 768px) {
+    .candidate-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        /* บังคับ 2 คอลัมน์เท่ากันเสมอ */
+        gap: 10px;
+    }
+
+    .candidate-info-card {
+        background: #f8fafc;
+        padding: 8px 10px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #e2e8f0;
+        min-width: 0;
+        font-size: 0.9rem;
+        /* ป้องกันเนื้อหาดันกล่องแตก */
+    }
+
+    .candidate-avatar {
+        font-size: 16px;
+        background: #e2e8f0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        flex-shrink: 0;
+        /* ป้องกันรูปโปรไฟล์โดนบีบ */
+    }
+
+    /* จัดการข้อความไม่ให้ล้นการ์ดเมื่ออยู่แบบ 2 คอลัมน์ */
+    .candidate-info-card h4,
+    .candidate-info-card .name {
+        font-size: 0.82rem;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        /* ตัดข้อความยาวเกินด้วย ... */
+    }
+
+    .party-tag {
+        color: #3b82f6;
+        font-size: 0.72rem;
+        font-weight: bold;
+        margin: 1px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .slogan {
+        font-size: 0.68rem;
+        font-style: italic;
+        color: #94a3b8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+
+    .detail-district-selector {
+        margin: 0 auto;
+    }
 }

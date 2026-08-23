@@ -24,7 +24,7 @@ export default function ResultQuestion({ questionResults }: Props) {
         </div>
       ) : (
         <div className="block-body">
-          <p className="question-text">ท่านเห็นชอบว่าสมควรมีรัฐธรรมนูญฉบับใหม่หรือไม่?</p>
+          <p className="question-text">สมควรมีรัฐธรรมนูญฉบับใหม่หรือไม่?</p>
 
           {/* 🔥 Progress bar Container */}
           <div className="progress-bar">

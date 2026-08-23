@@ -316,14 +316,12 @@
    🎛️ DISTRICT SELECTOR & CANDIDATE
 ========================= */
 .district-wrapper {
-  margin: 24px 200px 0 200px;
+  max-width: 1200px; /* จำกัดความกว้างสูงสุดแทน */
+  margin: 24px auto 0 auto; /* จัดให้อยู่ตรงกลางเสมอ */
   padding: 24px;
-
   background: #ffffff;
   border-radius: 16px;
-
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
 }
 
 /* ลบปัญหา Padding ดันหัวการ์ดสีน้ำเงินสำหรับกรณีใช้ district-wrapper */
@@ -499,29 +497,49 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-
+  max-height: 380px; /* ปรับความสูงตามต้องการ */
+  overflow-y: auto;  /* เปิดให้เลื่อนขึ้น-ลงภายในกล่อง */
+  padding-right: 6px; /* เผื่อพื้นที่ให้ Scrollbar */
 }
 
-/* Responsive สำหรับขนาดหน้าจอเล็ก */
-@media (max-width: 640px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
+/* ล็อคความสูงและเปิด Scrollbar ฝั่งขวา */
+.others-side {
+  max-height: 380px; /* ปรับความสูงตามต้องการ */
+  overflow-y: auto;  /* เปิดให้เลื่อนขึ้น-ลงภายในกล่อง */
+  padding-right: 6px; /* เผื่อพื้นที่ให้ Scrollbar */
+}
 
-  .district-selector-container {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+/* 1. จัดกล่องและเพิ่มระยะห่างระหว่างรายการ */
+.others-side .result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px; /* เพิ่ม padding บน-ล่าง ให้ตัวหนังสือไม่ติดกัน */
+  margin-bottom: 6px; /* เว้นระยะห่างระหว่างแต่ละแถว */
+  border-bottom: 1px solid #f1f5f9; /* เพิ่มเส้นแบ่งบางๆ ให้ดูเป็นระเบียบ (ใส่หรือไม่ใส่ก็ได้) */
+  gap: 8px;
+}
 
-  .district-selector {
-    width: 100%;
-  }
+/* 2. จัดการเว้นระยะชื่อ-นามสกุล และชื่อพรรค */
+.others-side .party-name {
+  font-size: 11px;
+  line-height: 1.4; /* เพิ่มระยะห่างระหว่างบรรทัด */
+  word-break: break-word;
+}
 
-  .district-selector button {
-    flex: 1;
-    text-align: center;
-    padding: 8px 0;
-  }
+.others-side .party-name small {
+  display: block; /* ดันชื่อพรรคลงบรรทัดใหม่ */
+  margin-top: 2px; /* เว้นระยะห่างจากชื่อคนเล็กน้อย */
+  font-size: 10px;
+  color: var(--color-text-muted, #64748b);
+}
+
+/* 3. จัดการระยะของคะแนนฝั่งขวาสุด */
+.others-side .vote-stats {
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .block-empty {
@@ -531,4 +549,211 @@
 }
 .block-empty > .empty {
   font-size: 20px;
+}
+
+/* ==========================================
+   📱 RESPONSIVE ALL-IN-ONE FOR MOBILE
+========================================== */
+@media (max-width: 768px) {
+  /* 1. โครงสร้างหลัก (Layout) */
+  .dashboard-container {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 0px;
+  }
+
+  .district-wrapper {
+    margin: 16px 0 0 0;
+    padding: 16px;
+  }
+
+  .results-container h3 {
+    font-size: 16px;
+  }
+
+  .section-label {
+    font-size: 11px;
+  }
+
+  /* 2. โพเดียมพรรค (3 อันดับแรก) */
+  .podium-display {
+    width: 90%;
+    font-size: 16px;
+  }
+
+  .podium-column .name {
+    font-size: 13px;
+    margin: 6px 0 2px 0;
+  }
+
+  .podium-column .score {
+    font-size: 11px;
+  }
+
+  .medal-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  /* 3. รายการพรรคอันดับอื่นๆ */
+  .result-item {
+    padding: 8px 12px;
+  }
+
+  .rank-num,
+  .party-name,
+  .vote-stats {
+    font-size: 13px;
+  }
+
+  /* 4. ส่วนประชามติ (ลบกล่องออก / เรียง 3 ช่องโปร่งใส) */
+  .question-layout .block-body {
+    margin-top: 0px;
+  }
+
+  .question-layout {
+    padding-top: 0;
+  }
+
+  .question-text {
+    font-size: 20px;
+    font-weight: 700;
+    padding: 10px;
+  }
+
+  .bar {
+    font-size: 11px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .stats-grid .card {
+    background: transparent;
+    box-shadow: none;
+    padding: 4px 0;
+    border-radius: 0;
+  }
+
+  .stats-grid .card::before {
+    display: none;
+  }
+
+  .stats-grid .card p {
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+
+  .stats-grid .card h2 {
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+
+  .stats-grid .card span {
+    font-size: 11px;
+    background: transparent;
+    padding: 0;
+    color: #64748b;
+  }
+
+  /* 5. ส่วนผู้สมัครรายบุคคล */
+  .candidate-info .name {
+    font-size: 14px;
+  }
+
+  .candidate-info .party {
+    font-size: 11px;
+  }
+
+  .candidate-score-block .votes {
+    font-size: 14px;
+  }
+
+  .candidate-score-block .percent {
+    font-size: 11px;
+  }
+
+  /* 6. ปุ่มแถบ Navigation */
+  #nav-btn-container {
+    width: auto;
+    display: inline-flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .nav-btn {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  /* 1. บังคับ Grid 2 คอลัมน์แบบกระชับ (ซ้าย 1.2 / ขวา 1) */
+  .candidate-layout {
+    display: grid !important;
+    grid-template-columns: 1.2fr 1fr !important;
+    gap: 8px; /* ลดช่องว่างระหว่างคอลัมน์ซ้าย-ขวา */
+  }
+
+  /* 2. ย่อยขนาดส่วนโพเดียม (ฝั่งซ้าย) */
+  .candidate-podium-wrapper .top3-podium {
+    padding: 0;
+    gap: 2px; /* ลดระยะห่างระหว่างแท่น 1 2 3 */
+  }
+
+  .candidate-podium-wrapper .medal-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .candidate-podium-wrapper .podium-column .name {
+    font-size: 10px; /* ย่อชื่อผู้สมัคร */
+    line-height: 1.1;
+    margin: 2px 0;
+  }
+
+  .candidate-podium-wrapper .podium-column .score {
+    font-size: 9px; /* ย่อขนาดคะแนน */
+    display: block;
+  }
+
+  /* 3. ย่อยขนาดรายชื่ออันดับ 4 เป็นต้นไป (ฝั่งขวา) */
+  .others-side .results-list {
+    padding: 0;
+  }
+
+  .others-side .result-item {
+    padding: 4px 2px;
+    gap: 4px;
+  }
+
+  .others-side .rank-num {
+    width: 14px;
+    font-size: 10px;
+  }
+
+  .others-side .party-name {
+    font-size: 10px;
+    line-height: 1.2;
+    word-break: break-word; /* ให้ตัดคำชื่อยาวๆ ได้ */
+  }
+
+  .others-side .party-name small {
+    display: block; /* ขึ้นบรรทัดใหม่ให้ชื่อพรรค ไม่ดันขวา */
+    font-size: 9px;
+  }
+
+  .others-side .vote-stats {
+    font-size: 9px;
+    white-space: nowrap;
+  }
 }

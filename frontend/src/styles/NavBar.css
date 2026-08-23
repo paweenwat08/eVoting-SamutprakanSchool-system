@@ -90,3 +90,44 @@ header {
     border-top-right-radius: 10px;
     border-bottom-right-radius: 10px;
 }
+
+/* Responsive สำหรับหน้าจอมือถือ (ขนาดไม่เกิน 768px) */
+@media (max-width: 768px) {
+  header {
+    /* เปลี่ยนจาก Grid 3 คอลัมน์ เป็น Flex แนวตั้ง */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 10px; /* ลด Padding ด้านข้างลงเพื่อเพิ่มพื้นที่ */
+  }
+
+  #nav-title {
+    justify-self: center;
+    left: 0;
+    gap: 8px;
+    flex-wrap: wrap; /* ป้องกันข้อความยาวเกินหน้าจอ */
+    justify-content: center;
+    text-align: center;
+  }
+
+  #nav-title p {
+    font-size: 16px; /* ย่อขนาดฟอนต์บนมือถือ */
+  }
+
+  #login-btn {
+    font-size: 18px; /* ย่อขนาดปุ่มเลือกตั้ง */
+    padding: 6px 16px;
+  }
+
+  #nav-btn-container {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap; /* หากเมนูยาวเกินให้พับลงมาได้ */
+  }
+
+  .nav-btn {
+    font-size: 12px; /* ย่อขนาดฟอนต์เมนู */
+    padding: 8px 10px;
+  }
+}

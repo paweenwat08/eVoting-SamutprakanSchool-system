@@ -14,9 +14,9 @@
 //RFID
 #include <SPI.h>
 #include <MFRC522.h>
-#define SS_PIN  5
+#define SS_PIN 5
 #define RST_PIN 17
-MFRC522 rfid(SS_PIN, RST_PIN); // <--- เพิ่มบรรทัดนี้เพื่อประกาศสร้างตัวแปร rfid
+MFRC522 rfid(SS_PIN, RST_PIN);  // <--- เพิ่มบรรทัดนี้เพื่อประกาศสร้างตัวแปร rfid
 
 // กำหนดพิน SDA และ SCL ชัดเจน
 #define SDA_PIN 21
@@ -51,24 +51,24 @@ Keypad customKeypad = Keypad(
 // WIFI
 // =====================================================
 
-const char* WIFI_SSID = "WIN_2.4G";
-const char* WIFI_PASSWORD = "Sungsak9315";
+const char* WIFI_SSID = "Win";
+const char* WIFI_PASSWORD = "0809610407";
 
 // =====================================================
 // BACKEND
 // =====================================================
 
 const char* SERVER_LOGIN =
-  "http://192.168.1.130:4000/api/v1/voters/login";
+  "http://172.20.10.2:4000/api/v1/voters/login";
 
 const char* SERVER_PARTIES =
-  "http://192.168.1.130:4000/api/v1/parties";
+  "http://172.20.10.2:4000/api/v1/parties";
 
 const char* SERVER_CANDIDATES =
-  "http://192.168.1.130:4000/api/v1/candidates";
+  "http://172.20.10.2:4000/api/v1/candidates";
 
 const char* SERVER_VOTE =
-  "http://192.168.1.130:4000/api/v1/vote";
+  "http://172.20.10.2:4000/api/v1/vote";
 
 // =====================================================
 // STATE
@@ -184,8 +184,8 @@ void setup() {
   lcd.backlight();
 
   // --- เพิ่มการเริ่มต้น RFID ตรงนี้ ---
-  SPI.begin();       // เริ่มต้นระบบสื่อสาร SPI
-  rfid.PCD_Init();   // เริ่มต้นใช้งานโมดูล RFID RC522
+  SPI.begin();      // เริ่มต้นระบบสื่อสาร SPI
+  rfid.PCD_Init();  // เริ่มต้นใช้งานโมดูล RFID RC522
 
   Serial.println();
   Serial.println("==============================");
@@ -951,28 +951,28 @@ void showConfirmation() {
   // --- หน้าที่ 1: แสดงข้อมูลผู้ลงคะแนน ---
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Voter: " + voterName.substring(0, 9)); // ตัดคำไม่ให้เกิน 16 ตัวอักษร
+  lcd.print("Voter: " + voterName.substring(0, 9));  // ตัดคำไม่ให้เกิน 16 ตัวอักษร
   lcd.setCursor(0, 1);
   lcd.print("District: " + voterDistrict.substring(0, 10));
-  delay(3000); // ค้างไว้ 3 วินาที
+  delay(3000);  // ค้างไว้ 3 วินาที
 
   // --- หน้าที่ 2: แสดงหมายเลขพรรคและหมายเลขผู้สมัคร ---
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Party No.: ");
-  lcd.print(selectedPartyNumber);     // แสดงเบอร์พรรคที่กด (เช่น 1, 2, 3)
+  lcd.print(selectedPartyNumber);  // แสดงเบอร์พรรคที่กด (เช่น 1, 2, 3)
 
   lcd.setCursor(0, 1);
   lcd.print("Cand. No.: ");
-  lcd.print(selectedCandidateNumber); // แสดงเบอร์ผู้สมัครที่กด (เช่น 1, 2, 5)
+  lcd.print(selectedCandidateNumber);  // แสดงเบอร์ผู้สมัครที่กด (เช่น 1, 2, 5)
 
-  delay(3000); // ค้างไว้ 3 วินาที
+  delay(3000);  // ค้างไว้ 3 วินาที
 
   // --- หน้าที่ 3: แสดงประเด็นลงมติและคำสั่งกดปุ่ม ---
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Ref: ");
-  lcd.print(selectedReferendum); // แสดง YES, NO หรือ ABSTAIN
+  lcd.print(selectedReferendum);  // แสดง YES, NO หรือ ABSTAIN
   lcd.setCursor(0, 1);
   lcd.print("#:OK   *:CANCEL");
 }
@@ -994,6 +994,15 @@ void sendVote() {
     "Content-Type",
     "application/json");
 
+  String referendumThai;
+
+  if (selectedReferendum == "YES") {
+    referendumThai = "เห็นด้วย";
+  } else if (selectedReferendum == "NO") {
+    referendumThai = "ไม่เห็นด้วย";
+  } else if (selectedReferendum == "ABSTAIN") {
+    referendumThai = "งดออกเสียง";
+  }
 
   String jsonData =
     "{"
@@ -1004,7 +1013,7 @@ void sendVote() {
                         "\"candidate\":\""
     + selectedCandidateId + "\","
                             "\"referendum\":\""
-    + selectedReferendum + "\""
+    + referendumThai + "\""
                            "}";
 
 
@@ -1017,6 +1026,12 @@ void sendVote() {
 
   String response =
     http.getString();
+
+  Serial.print("Vote HTTP: ");
+  Serial.println(responseCode);
+
+  Serial.print("Server response: ");
+  Serial.println(response);
 
   http.end();
 
@@ -1141,12 +1156,12 @@ void playKeyBeep() {
 }
 
 void playSuccessSound() {
-  digitalWrite(buzzerPin, LOW);   // บี๊บ ครั้งที่ 1
+  digitalWrite(buzzerPin, LOW);  // บี๊บ ครั้งที่ 1
   delay(80);
   digitalWrite(buzzerPin, HIGH);  // หยุดพัก
   delay(80);
-  
-  digitalWrite(buzzerPin, LOW);   // บี๊บ ครั้งที่ 2
+
+  digitalWrite(buzzerPin, LOW);  // บี๊บ ครั้งที่ 2
   delay(120);
   digitalWrite(buzzerPin, HIGH);  // ปิดเสียง
 }
