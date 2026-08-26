@@ -135,7 +135,7 @@ export default function DetailsPage() {
                   {/* เปลี่ยนกลับเป็นอีโมจิคนเหมือนเดิม */}
                   <div className="candidate-avatar">👤</div>
                   <div className="candidate-text">
-                    <h4>
+                    <h4 className="candidate-name">
                       {candidate.firstname} {candidate.lastname}
                     </h4>
                     <p className="party-tag">สังกัด: {partyName}</p>
