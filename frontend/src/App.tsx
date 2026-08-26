@@ -11,11 +11,11 @@ import './styles/adt_dcor.css'
 
 export default function App() {
   const [page, setPage] = useState<Page>("results")
-  const [currentUser, setCurrentUser] = useState<number | null>(null)
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   return (
     <main>
-      <NavBar page={page} setPage={setPage} />
+      <NavBar setPage={setPage} />
 
       {page === "login" && (
         <LoginPage setUser={setCurrentUser} goVote={() => setPage("vote")} goAlready={() => setPage("already")}/>

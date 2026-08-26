@@ -2,11 +2,10 @@ import type { Page } from "../types/Page.ts"
 import '../styles/NavBar.css'
 
 type Props = {
-  page: Page
   setPage: React.Dispatch<React.SetStateAction<Page>>
 }
 
-export default function NavBar({ page, setPage }: Props) {
+export default function NavBar({ setPage }: Props) {
   return (
     <header>
 
