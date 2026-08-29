@@ -1,4 +1,3 @@
-
 //WIFI connection & API
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -51,24 +50,23 @@ Keypad customKeypad = Keypad(
 // WIFI
 // =====================================================
 
-const char* WIFI_SSID = "Win";
-const char* WIFI_PASSWORD = "0809610407";
+#include "secrets.h"
 
 // =====================================================
 // BACKEND
 // =====================================================
 
 const char* SERVER_LOGIN =
-  "http://172.20.10.2:4000/api/v1/voters/login";
+  "https://evoting-samutprakanschool-system.onrender.com/api/v1/voters/login";
 
 const char* SERVER_PARTIES =
-  "http://172.20.10.2:4000/api/v1/parties";
+  "https://evoting-samutprakanschool-system.onrender.com/api/v1/parties";
 
 const char* SERVER_CANDIDATES =
-  "http://172.20.10.2:4000/api/v1/candidates";
+  "https://evoting-samutprakanschool-system.onrender.com/api/v1/candidates";
 
 const char* SERVER_VOTE =
-  "http://172.20.10.2:4000/api/v1/vote";
+  "https://evoting-samutprakanschool-system.onrender.com/api/v1/vote";
 
 // =====================================================
 // STATE

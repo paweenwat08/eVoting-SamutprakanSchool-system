@@ -77,7 +77,6 @@ const sendVote = async (req: Request, res: Response) => {
 const getVotes = async (req: Request, res: Response) => {
     try {
         const votes = await Vote.find()
-            .populate("voter")
             .populate("party")
             .populate("candidate");
 
