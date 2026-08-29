@@ -17,8 +17,3 @@ export interface GetResultsResponse {
   votes: VoteRecord[];
 }
 
-// 2. ตามด้วยฟังก์ชัน Service
-export async function getResults(): Promise<GetResultsResponse> {
-  const response = await fetch("/api/v1/vote");
-  return await response.json();
-}

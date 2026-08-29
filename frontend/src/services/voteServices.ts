@@ -6,7 +6,9 @@ export async function sendVote(
   candidate: string,
   referendum: string
 ) {
-  const response = await fetch("/api/v1/vote", {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/v1/vote`, 
+    {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -23,7 +25,7 @@ export async function sendVote(
 }
 
 export async function getResults(): Promise<GetResultsResponse> {
-  const response = await fetch("/api/v1/vote/results", {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/vote/results`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
