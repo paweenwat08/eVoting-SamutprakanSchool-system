@@ -1,6 +1,6 @@
-import { Vote } from "../models/vote.model";
-import { Voter } from "../models/voter.model";
-import { Candidate } from "../models/candidate.model";
+import { Vote } from "../models/vote.model.js";
+import { Voter } from "../models/voter.model.js";
+import { Candidate } from "../models/candidate.model.js";
 import { Request, Response } from "express";
 
 const sendVote = async (req: Request, res: Response) => {

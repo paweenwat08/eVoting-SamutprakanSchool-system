@@ -1,4 +1,4 @@
-import { Candidate } from "../models/candidate.model";
+import { Candidate } from "../models/candidate.model.js";
 import { Request, Response } from "express";
 
 const addCandidate = async (req: Request, res: Response) => {

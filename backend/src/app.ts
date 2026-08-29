@@ -2,10 +2,10 @@ import express from "express";
 import cors from "cors";
 
 // routes import
-import voterRouter from './routes/voter.route';
-import partyRouter from './routes/party.route';
-import candidateRouter from './routes/candidate.route';
-import voteRouter from './routes/vote.route'
+import voterRouter from './routes/voter.route.js';
+import partyRouter from './routes/party.route.js';
+import candidateRouter from './routes/candidate.route.js';
+import voteRouter from './routes/vote.route.js'
 
 const app = express(); // create an express app
 
