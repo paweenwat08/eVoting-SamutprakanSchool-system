@@ -57,16 +57,16 @@ Keypad customKeypad = Keypad(
 // =====================================================
 
 const char* SERVER_LOGIN =
-  "https://evoting-samutprakanschool-system.onrender.com/api/v1/voters/login";
+  "yourbackendWebsite";
 
 const char* SERVER_PARTIES =
-  "https://evoting-samutprakanschool-system.onrender.com/api/v1/parties";
+  "yourbackendWebsite";
 
 const char* SERVER_CANDIDATES =
-  "https://evoting-samutprakanschool-system.onrender.com/api/v1/candidates";
+  "yourbackendWebsite";
 
 const char* SERVER_VOTE =
-  "https://evoting-samutprakanschool-system.onrender.com/api/v1/vote";
+  "yourbackendWebsite";
 
 // =====================================================
 // STATE
